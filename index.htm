@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="de">
+<head> 
+<!-- general  -->
+<title>Simple Corona Info</title>
+<meta name="robots" content="noindex,nofollow" />
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="keywords" content="Corona,Info,Inzidenz,Fälle" />
+<meta name="description" content="Simple Corona Info" />
+<meta name="Author" content="P. Janko" />
+<!-- manifest file -->
+<link rel="manifest" href="manifest.json" />
+<!-- ios webapp  -->
+<meta name="viewport" content="user-scalable=yes, width=device-width, initial-scale=1" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="format-detection" content="telephone=no" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+<!-- chrome webapp  -->
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#cccccc" />
+<link rel="icon" sizes="144x144" href="icon_144.png" />
+<link rel="icon" sizes="192x192" href="icon_192.png" />
+<link rel="icon" sizes="512x512" href="icon_512.png" />
+<!-- win tile icon and background  -->
+<meta name="msapplication-TileColor" content="#999999" />
+<meta name="msapplication-TileImage" content="icon_144.png" />
+<!-- icon -->
+<link rel="shortcut icon" href="favicon.ico" />
+<style>
+/* ########## basic page settings ##########  */
+body				{padding:0px; margin:0px; background:#cccccc; color:#333333; font-family:sans-serif; overflow:auto;-webkit-text-size-adjust: none;}
+*:focus 			{outline: none;}
+.page				{padding: 0px; margin:0px; display:none;-webkit-touch-callout: none;-webkit-user-select: none;-khtml-user-select: none;-moz-user-select: none;-ms-user-select: none;-o-user-select: none;user-select: none;}
+
+.header				{position:fixed; top: 0px;  left: 0px; padding:0px; margin:0px; background:#333333; height:55px; width:100%; z-index:100}
+.header	h1			{position:fixed; top:14px;  left:10px; padding:0px; margin:0px; color:#eeeeee; font-weight:normal; font-size:22px;}
+.header	a			{position:fixed; padding:7px; margin:0px; color:#eeeeee; font-weight:normal; font-size:16px; border: 1px solid #eeeeee; border-radius:5px;}
+.header	a.button0	{display:block; top:14px; left: 15px; text-decoration:none; padding:0px; margin:0px; color:#eeeeee; font-weight:normal; font-size:22px; border:none}
+.header	a.button1	{display:block; top:10px; right:10px; text-decoration:none;}
+.header	a.button2	{display:block; top:10px; right:70px; text-decoration:none;}
+.header	a:active	{color:#333333; background:#eeeeee}
+
+.content			{padding: 0px; margin:0px; position:absolute; top:55px; left:0px; width:100%; color:#333333;; z-index:10;}
+.content h2			{padding: 0px; margin:20px 5px 10px 5px; font-size:20px; font-weight:bold; text-align:center}
+.content p 			{padding: 0px; margin:10px 25px 10px 25px; font-size:14px; font-weight:normal; line-height: 20px; text-align:center}
+.content li			{padding: 0px 0px 5px 0px; margin: 0px; font-size:14px; font-weight:normal;}
+.content a			{color:#333333}
+
+.content button 		{padding:8px 10px 8px 10px; margin:10px 5% 10px 5px; color:#eeeeee; text-align:center; background:#333333; border:1px solid #eeeeee; cursor:pointer; border-radius:5px; font-size:16px; font-weight:normal;}
+.content button.bsmall 	{padding:5px 10px 5px 10px; margin:0px}
+
+/* to switch off safari ios style of form elements use:  -webkit-appearance:none */
+.content select			 	{padding:7px 0px 7px 10px; margin:10px 5px 10px 5%; color:#333333; width:60%; background:#eeeeee; border:1px solid #333333; border-radius:5px; font-size:16px;}
+.content div#newlist		{font-family: monospace; font-weight:bold; font-size:52px; text-align:center; padding:0px 10px 0px 10px; color:#990000}
+.content div#daterefresh	{position:fixed; bottom:0px; left:0px; color:#eeeeee; font-size:18px; padding:2px 10px 2px 10px; margin:0px; width:100%; background:#333333; text-align:center}
+
+.content table 						{border:1px solid #333333; margin:10px 6% 25px 6%; width:88%; font-size:16px; border-radius:5px; border-spacing:0px}
+.content table th					{padding: 10px; background: #333333; color:#eeeeee; font-weight:normal}
+.content table td					{padding: 5px; text-align:right;}
+.content table td strong			{font-size:18px; color:#333333}
+.content table td span				{font-size:12px;}
+.content table td.desc				{padding:15px; font-size:14px; text-align:center}
+.content table tr:nth-child(even) 	{background-color: #eeeeee;}
+
+/* ########## footer settings ##########  */
+p.footer			{padding:10px 0px 10px 0px; margin:0px 0px 40px 0px; color:#333333; font-weight:normal; font-size:14px; text-align:center;}
+p.footer a			{color:#333333}
+
+/* ########## info settings ##########  */
+#info .content h2	{padding: 10px 30px 10px 30px; margin: 0px; font-weight:bold; font-size:20px; text-align:left}
+#info .content p	{padding:  5px 30px 10px 30px; margin: 0px; text-align:justify; font-size:14px}
+#info .content ul	{padding:  5px 30px 10px 30px; margin: 0px 0px 0px 5%}
+#info .content li	{text-align:left}
+
+/* Larger than 800px  */
+@media (min-width: 800px) {
+.content		{width:800px; left:50%; margin-left:-400px; margin-top:20px;}
+}
+</style>
+<script>
+//##########################################################
+// Simple Corona Info, (c) 2020 webapps@cjpj, P. Janko
+// MIT License: https://www.cjpj.de/contact.htm#terms
+//##########################################################
+// Date			Version			Description
+// 23.12.2020	0.1alpha		initial version
+//##########################################################
+// based on: https://www.cjpj.de/appshell.htm
+// Simple App Shell, (c) 2020 webapps@cjpj, P. Janko
+// MIT License: https://www.cjpj.de/contact.htm#terms
+//##########################################################
+
+//strict mode
+"use strict";
+
+//##########################################################
+//basic global vars
+var appVersion = "0.1alpha Test";
+var appRelease = "23.12.2020";
+//global array with all pages
+var appPages = new Array();
+
+//global array for holding LK OBJECTID
+var trackObjectIDArr = new Array();
+//set max number of lk
+var maxNofIDs = 10;
+
+//############################################################################
+//Quellenvermerk: Robert Koch-Institut (RKI), dl-de/by-2-0
+//Die Daten sind die "Fallzahlen in Deutschland" des Robert Koch-Institut (RKI) [https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Fallzahlen.html]
+//und stehen unter der Open Data Datenlizenz Deutschland - Namensnennung - Version 2.0 [https://www.govdata.de/dl-de/by-2-0] zur Verfügung.
+//############################################################################
+//RKI Corona Landkreise, Nationale Plattform für geographische Daten (NPGEO-DE)
+//Source https://npgeo-corona-npgeo-de.hub.arcgis.com/datasets/917fc37a709542548cc3be077a786c17_0
+var dataJasonURLLK = "https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_Landkreisdaten/FeatureServer/0/query?where=1%3D1&outFields=OBJECTID,GEN,BEZ,last_update,cases7_per_100k_txt&returnGeometry=false&outSR=4326&f=json";
+//############################################################################
+//RKI_COVID19
+//Tabelle mit den aktuellen Covid-19 Infektionen pro Tag (Zeitreihe).
+//Source: https://hub.arcgis.com/datasets/dd4580c810204019a7b8eb3e0b329dd6
+//Query URL for new cases from https://gist.github.com/malakka/0576bb922e7b81b95137a06b619bba1b
+var dataJasonURLNC = "https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_COVID19/FeatureServer/0/query?f=json&where=NeuerFall%20IN(1%2C%20-1)&returnGeometry=false&spatialRel=esriSpatialRelIntersects&outFields=*&outStatistics=%5B%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22AnzahlFall%22%2C%22outStatisticFieldName%22%3A%22value%22%7D%5D&resultType=standard&cacheHint=true";
+
+//gobal json Objects
+var dataContainerObjLK;		//obj for Landkreise
+var dataContainerObjNC;		//obj for neuinfektionen
+
+//Data for testing
+//var dataJasonURLLK = "sample.json";
+//var dataJasonURLNC = "sample_gesamt.json";
+
+//################# msg section #################
+var msg00 = "Bitte einen Landkreis aus der Liste wählen!";
+var msg01 = "Achtung!\n\nSpeichern wird nicht unterstützt.\nNach Schließen des Browsers sind die Daten verloren!";
+var msg02 = "Max. Anzahl von " + maxNofIDs + " Einträgen erreicht!\nUm neue anzulegen, bitte Einträge löschen.";
+var msg03 = "Diesen Eintrag löschen?";
+var msg04 = "Noch keine Landkreise gespeichert.<br />Landkreis wählen und Speichern drücken.";
+var msg05 = "Eintrag existiert schon in der Liste!";
+var msg06 = "Alle Einträge löschen?";
+
+//status messages
+var msgS01 = "Verbunden";
+var msgS02 = "Getrennt";
+var msgS03 = "Ja - Offline verfügbar";
+var msgS04 = "Nein - <a href=\"index.htm\">In Cache laden</a>";
+var msgS05 = "Update verfügbar - <a href=\"index.htm\">Update laden</a>";
+
+
+//##########################################################
+//register the serviceworker
+if ("serviceWorker" in navigator) {
+	window.addEventListener("load", function() {
+		navigator.serviceWorker.register("/serviceworker.js").then(function(registration) {
+			updateViaCache: "none";    //bypass http cache
+			// Registration was successful
+			//console.log("ServiceWorker registration successful with scope: ", registration.scope);
+			//check for update
+			registration.addEventListener("updatefound", function() {
+				document.getElementById("supdate").innerHTML = msgS05;
+			});
+		}).catch(function(err) {
+			// registration failed :(
+			//console.log("ServiceWorker registration failed: ", err);
+		});
+	});
+}
+//##########################################################
+
+
+//##########################################################
+//set div page display from none to block based on hash
+function showPage() {
+	//set first page for no hashid given
+	var divID = appPages[0].getAttribute("id");
+	//get page div id from hash
+	if ((location.hash !== "") && (location.hash !== undefined)) {divID = location.hash.substring(1);}
+	//hide all pages first
+	for (var i = 0; i < appPages.length; i++) {
+		var pageID1 = appPages[i].getAttribute("id");
+		document.getElementById(pageID1).style.display = "none";
+	}
+	//only show pages for existing IDs (whitelist)
+	var whitelistPage = false;
+	for (var n = 0; n < appPages.length; n++) {
+		var pageID2 = appPages[n].getAttribute("id");
+		if (divID === pageID2) {whitelistPage = true;}
+	}
+	//set first page for id not whitelisted
+	if (!whitelistPage) {divID = appPages[0].getAttribute("id");}
+	//show page and scroll to top
+	document.getElementById(divID).style.display = "block";
+	document.body.scrollTop = 0; 			//Chrome, Safari
+	document.documentElement.scrollTop= 0;	//Firefox, IE
+}
+
+
+//##########################################################
+//set app status for network, chaching
+//Note: update is handled in SW registration
+function setAppStatus() {
+	//set network status initial and listener
+	if (window.navigator.onLine) {document.getElementById("snet").innerHTML = msgS01;} else {document.getElementById("snet").innerHTML = msgS02;}
+	window.addEventListener("online", function(e)  {document.getElementById("snet").innerHTML = msgS01;});
+	window.addEventListener("offline", function(e) {document.getElementById("snet").innerHTML = msgS02;});
+	//set cache status (considered as chached if index.htm found)
+	try {
+		caches.match("/index.htm").then(function(cacheResponse) {
+			//console.log('#####cacheResponse ', cacheResponse);
+			if (cacheResponse) {
+				document.getElementById("scache").innerHTML = msgS03;
+			} else {
+				document.getElementById("scache").innerHTML = msgS04;
+			}
+		});
+	} catch(err) {
+		//console.log('#####cacheError ', err);
+		document.getElementById("scache").innerHTML = "-";
+	}
+}
+
+
+//##########################################################
+//init app, set version, check deep links, show start page
+function initApp() {
+	//fill array with pages
+	appPages = document.querySelectorAll("div.page");
+	//show start page or deep link page
+	showPage();
+	//init handler for hash navigation
+	window.addEventListener("hashchange", showPage);
+	//set version
+	document.getElementById("maxlk").innerHTML = maxNofIDs;
+	document.getElementById("version").innerHTML = appVersion;
+	document.getElementById("release").innerHTML = appRelease;
+	var footerVer = document.querySelectorAll("span.fversion");
+	for (var i = 0; i < footerVer.length; i++) {
+		footerVer[i].innerHTML = appVersion;
+	}
+	//set app status
+	setAppStatus();
+	//get the data from URL stream
+	readJsonData("lk");		//lk = landkreise
+	readJsonData("nc");		//new cases
+}
+
+
+//##########################################################
+//           Simple Corona Info Code
+//##########################################################
+
+//##########################################################
+//show new cases, lk dropdown, saved lk and current date
+//-dtype: data type, lk = show dropdown+saved lk, nc = show new cases
+function showJasonData(dtype) {
+	if (dtype === "lk") {
+		//show lk dropdwon #################################
+		var containerSB = "<option value=\"0\">Landkreis wählen:</option>";
+		var helperArr = new Array(); 	//array for sorting
+		for (var i = 0; i < dataContainerObjLK.features.length; i++) {
+			//option entries for lk drowpdown
+			var jsonStr = "<!--" + dataContainerObjLK.features[i].attributes.GEN + "--><option value=\"" + dataContainerObjLK.features[i].attributes.OBJECTID + "\">" + dataContainerObjLK.features[i].attributes.GEN + " (" + dataContainerObjLK.features[i].attributes.BEZ +")</option>";
+			helperArr.push(jsonStr);
+		}
+		//fill str buffer with sorted items
+		helperArr.sort();
+		helperArr.forEach(function(item) {containerSB = containerSB + item;});
+		document.getElementById("lklist").innerHTML = "<select id=\"lkvalues\">" + containerSB + "</select><button type=\"button\" onclick=\"saveLKToList()\">Speichern</button>";
+		//show saved lk ###################################
+		loadObjectIDs();
+		updateLKList();
+	} else if (dtype === "nc") {
+		//shwo new cases ###################################
+		var newCases = dataContainerObjNC.features[0].attributes.value;
+		document.getElementById("newlist").innerHTML = "+" + newCases;
+	}
+	//show current date ###################################
+	var dateObj = new Date();
+	var currentDate = dateObj.getDate() + "." + (dateObj.getMonth()+1) + "." + dateObj.getFullYear();
+	document.getElementById("datelist").innerHTML = currentDate;
+}
+
+//##########################################################
+//read jason data from url source
+//-dtype: data type, lk = data for landkreise, nc = data for new cases
+function readJsonData(dtype) {
+	var dataJasonURL = "";
+	if (dtype === "lk") {
+		dataJasonURL = dataJasonURLLK;
+	} else if (dtype === "nc") {
+		dataJasonURL = dataJasonURLNC;
+	}
+	//load data from json file via ajax
+	if (window.XMLHttpRequest) {
+		var xmlhttpObj = new XMLHttpRequest();
+		xmlhttpObj.onreadystatechange = function() {
+			if ((this.readyState === 4) && (this.status === 200)) {
+				//fill container obj with jason data
+				if (dtype === "lk") {
+					dataContainerObjLK = JSON.parse(this.responseText);
+				} else if (dtype === "nc") {
+					dataContainerObjNC = JSON.parse(this.responseText);
+				}
+				//console.log("ajax done: " + dtype);
+				showJasonData(dtype);
+			}
+		};
+		xmlhttpObj.open("GET", dataJasonURL, true);
+		xmlhttpObj.onerror = function() {
+			//console.log("Ajax load error!");
+			document.getElementById("newlist").innerHTML = "<p>Lade Fehler!<br />Bitte erneut versuchen!<br />Ganz unten Aktualisieren drücken.</p>";
+		};
+		xmlhttpObj.send();
+	} else {
+		//console.log("No ajax support!");
+		document.getElementById("newlist").innerHTML = "<p>Lade Fehler - (no ajax support)<br />Dieser Browser kann Daten nicht laden!</p>";
+	}
+}
+
+//##########################################################
+//set color for inzidenz values
+//-inzidenz:		inzindenz (string)
+function setColor(inzidenz) {
+	var inzValue = parseFloat(inzidenz);
+	var inzColor = "#333333";
+	if (inzValue < 35) {inzColor = "#333333";}
+	else if ((inzValue >= 35) && (inzValue < 50)) {inzColor = "#ff6600";}
+	else if ((inzValue >= 50) && (inzValue < 100)) {inzColor = "#d13624";}
+	else if ((inzValue >= 100) && (inzValue < 200)) {inzColor = "#931315";}
+	else if ((inzValue >= 200) && (inzValue < 500)) {inzColor = "#cc0000";}
+	else if (inzValue >= 500) {inzColor = "#da0183";}
+	else {inzColor = "#333333";}
+	return inzColor;
+}
+
+//##########################################################
+//update Landkreis list after adding or restart
+function updateLKList() {
+	var rowSB = ""; 	//str buffer with all rows
+	if (trackObjectIDArr.length === 0) {
+		rowSB = "<tr><td colspan=\"3\" class=\"desc\">" + msg04 + "</td></tr>";
+	} else {
+		for (var i = 0; i < trackObjectIDArr.length; i++) {
+			var objectID = parseInt(trackObjectIDArr[i]);
+			var rowLK = "";    //row with LK data
+			for (var n = 0; n < dataContainerObjLK.features.length; n++) {
+				var lk_ID  = dataContainerObjLK.features[n].attributes.OBJECTID;
+				var lk_GEN = dataContainerObjLK.features[n].attributes.GEN;
+				var lk_BEZ = dataContainerObjLK.features[n].attributes.BEZ;
+				var lk_LU  = dataContainerObjLK.features[n].attributes.last_update.substr(0,17);
+				var lk_C7T = dataContainerObjLK.features[n].attributes.cases7_per_100k_txt;
+				//get matching LK values form json Obj
+				if (objectID === lk_ID) {
+					rowLK = "<tr><td style=\"text-align:left;\">" + lk_GEN + " <span><br />" + lk_BEZ + ", <span style=\"white-space:nowrap\">" + lk_LU + "</span></span></td><td><strong style=\"color:" + setColor(lk_C7T) + "\">" + lk_C7T + "</strong></td><td><button class=\"bsmall\" onclick=\"deleteLKFromList(" + lk_ID + ",'" + lk_GEN + "','" + lk_BEZ + "')\">X</button></td></tr>";
+				}
+			}
+			rowSB = rowSB + rowLK;
+		}
+	}
+	//update LK table
+	document.getElementById("lkrows").innerHTML = rowSB;
+}
+
+//##########################################################
+//save Landkreis OBJECTID to list
+function saveLKToList() {
+	//get OBJECTID for selected LK (and text for msg)
+	var objectID = document.getElementById("lkvalues").value;
+	var lkInfo   = document.getElementById("lkvalues").options[document.getElementById("lkvalues").selectedIndex].text;
+	//check for selected LK
+	if (objectID === "0") {
+		alert(msg00);
+		document.getElementById("lkvalues").focus();
+	} else {
+		//check for max nof IDs
+		if (trackObjectIDArr.length >= maxNofIDs) {
+			alert(msg02);
+		} else {
+			//check for existing entries
+			if (trackObjectIDArr.find(function(item) {return parseInt(item) === parseInt(objectID);})) {
+				alert(msg05 + "\n" + lkInfo);
+			} else {
+				//update and save array
+				trackObjectIDArr.push(objectID);
+				saveObjectIDs();
+				//update table on startpage
+				updateLKList();
+			}
+		}
+	}
+}
+
+//##########################################################
+//delete Landkreis OBJECTID from list
+//-objID:	OBJECTID for lk (integer)
+//-lkGEN:	GEN for lk (string)
+//-lkBEZ:	BEZ for lk (string)
+function deleteLKFromList(objID,lkGEN,lkBEZ) {
+	//console.log("DELETE: " + objID + ", " + lkGEN+", " + lkBEZ);
+	if (confirm(msg03 + "\n" + lkGEN + " - " + lkBEZ)) {
+		//delete lk OBJECTID from array
+		var delIndex = trackObjectIDArr.findIndex(function(item) {return parseInt(item) === parseInt(objID);});
+		trackObjectIDArr.splice(delIndex, 1);
+		saveObjectIDs();
+		//update table on startpage
+		updateLKList()
+	}
+}
+
+//############################################################
+//save all LK OBJECTIDs
+function saveObjectIDs() {
+	//check for working localStorage
+	if (localStorage == null) {
+		alert(msg01);
+	} else {
+		//clear storage first, then save all items
+		localStorage.clear();
+		//save IDs as string separated by #
+		localStorage.setItem("LKOBJECTIDs", trackObjectIDArr.join("#"));
+	}
+}
+
+//############################################################
+//load all LK OBJECTIDs
+function loadObjectIDs() {
+	if (localStorage != null) {
+		if ((localStorage.getItem("LKOBJECTIDs") != null) && (localStorage.getItem("LKOBJECTIDs") !== "")) {
+			//build ID array
+			trackObjectIDArr = localStorage.getItem("LKOBJECTIDs").split("#");
+		}
+	}
+}
+
+//##########################################################
+//reload data (trigger new jason load)
+function refreshDataList() {
+	document.location.reload(true);
+}
+
+//##########################################################
+//delete all entries and clear localStorage
+function deleteAllLK() {
+	if (confirm(msg06)) {
+		localStorage.clear();
+		trackObjectIDArr = new Array();
+		updateLKList();
+		location.hash = "#appstart";
+	}
+}
+</script>
+</head>
+<body onload="initApp()">
+<noscript><h1 style="text-align:center">Please activate Javascript<br/>to run this web app!</h1></noscript>
+<!-- ###################### START PAGE ##############################  -->
+<div class="page" id="appstart">
+	<div class="header">
+		<h1>Simple Corona Info</h1>
+		<a class="button1" href="#info">Info</a>
+	</div>
+	<div class="content">
+		<form id="lkform" name="lkform" action="javascript:void(0)">
+			<h2>Neuinfektionen BRD</h2>
+			<div id="newlist">Lade Daten</div>
+			<p>zum Vortag</p>
+			<hr />
+			<div id="lklist" style="text-align:center;">Lade Daten</div>
+			<table>
+				<thead>
+					<tr><th colspan="3">Landkreis - 7-Tage-Inzidenz</th></tr>
+				</thead>
+				<tbody id="lkrows">
+					<tr><td></td><td></td><td></td></tr>
+					<tr><td colspan="3" class="desc">Noch keine Landkreise gespeichert.<br />Landkreis wählen und Speichern drücken.</td></tr>
+				</tbody>
+			</table>
+			<p>Keine Gewähr für Richtigkeit der bereitgestellten Informationen, siehe <a href="https://www.cjpj.de/contact.htm#termsde" target="_blank" rel="noopener">Nutzungsbedingungen</a>.</p>
+			<p class="footer">Simple Corona Info <span class="fversion"></span></p>
+			<br />
+		</form>
+ 		<div id="daterefresh"><button type="button" onclick="refreshDataList()">Datum: <strong id="datelist"></strong> - Aktualisieren</button></div>
+	</div>
+</div>
+
+<!-- ###################### ABOUT PAGE ##############################  -->
+<div class="page" id="info">
+	<div class="header">
+		<h1>Simple Corona Info</h1>
+		<a class="button1" href="#appstart">Zurück</a>
+	</div>
+	<div class="content">
+		<br />
+		<p><strong>Simple Corona Info</strong> zeigt die Anzahl der COVID-19 Neuinfektionen für Deutschand zum Vortag und die 7-Tage-Inzidenz der Landkreise.</p>
+		<p>Maximal <span id="maxlk"></span> Landkreise können abgespeichert werden. Die gespeicherten Landkreise werden nach Start der WebApp automatisch mit ihrer 7-Tage-Inzidenz angezeigt.
+		Bitte die <a href="https://www.cjpj.de/contact.htm#savede" target="_blank" rel="noopener">Wichtigen Speicherhinweise</a> beachten.</p>
+		<button style="margin:10px 10% 10px 10%; width:80%" type="button" onclick="deleteAllLK()">Alle Einräge löschen</button>
+		<p>Keine Gewähr für Funktion und Richtigkeit der bereitgestellten Informationen! Weitere Details unter <a href="https://www.cjpj.de/contact.htm#termsde" target="_blank" rel="noopener">Nutzungsbedingungen (Lizenz)</a>.</p>
+ 		<hr />
+		<h2>Quellenvermerk</h2>
+		<p>Robert Koch-Institut (RKI), dl-de/by-2-0<br />Die Daten sind die "Fallzahlen in Deutschland" des <a href="https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Fallzahlen.html" target="_blank" rel="noopener">Robert Koch-Institut (RKI)</a> und stehen unter der
+		<a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener">Open Data Datenlizenz Deutschland - Namensnennung - Version 2.0</a> zur Verfügung.</p>
+		<hr />
+		<h2>Status</h2>
+		<ul>
+			<li>Netzwerk: <strong id="snet">-</strong></li>
+			<li>Im Cache: <strong id="scache">-</strong></li>
+			<li>Update: <strong id="supdate">Kein Update verfügbar</strong></li>
+		</ul>
+		<hr />
+		<h2>Legende Inzidenz</h2>
+		<p>7-Tage-Inzidenz:<br />Fälle der letzten 7 Tage/100000 EW</p>
+		<ul>
+			<li><strong style="color:#333333">Inzidenz bis 35</strong></li>
+			<li><strong style="color:#ff6600">Inzidenz bis 50</strong></li>
+			<li><strong style="color:#d13624">Inzidenz bis 100</strong></li>
+			<li><strong style="color:#931315">Inzidenz bis 200</strong></li>
+			<li><strong style="color:#cc0000">Inzidenz bis 500</strong></li>
+			<li><strong style="color:#da0183">Inzidenz ab 500</strong></li>
+		</ul>
+		<hr />
+		<h2>Info</h2>
+		<ul>
+			<li>App Title: <strong>Simple Corona Info</strong></li>
+			<li>Version: <strong id="version">-</strong></li>
+			<li>Release Date: <strong id="release">-</strong></li>
+			<li>Website: <a href="https://cinfo.cjpj.de" target="_blank" rel="noopener">https://cinfo.cjpj.de</a></li>
+			<li><a href="https://www.cjpj.de/contact.htm#termsde" target="_blank" rel="noopener">Nutzungsbedingungen (Lizenz)</a></li>
+			<li><a href="https://www.cjpj.de/contact.htm#dataprotde" target="_blank" rel="noopener">Datenschutz</a></li>
+		</ul>
+		<hr />
+		<h2>Impressum</h2>
+		<ul>
+			<li>Autor: Peter Janko</li>
+			<li>Straße: Dahlienweg 39</li>
+			<li>Stadt: 83043 Bad Aibling</li>
+			<li>Land: Germany</li>
+			<li>Tel: +49 (0)8061 92670</li>
+			<li>Email: <a href="mailto:contact@cjpj.de">contact@cjpj.de</a></li>
+			<li>Website: <a href="https://www.cjpj.de" target="_blank" rel="noopener">https://www.cjpj.de</a></li>
+		</ul>
+		<hr />
+		<h2>Open Source Licenses</h2>
+		<ul>
+			<li><a href="https://www.cjpj.de/appshell.htm" target="_blank" rel="noopener">Simple App Shell</a> unter <a href="https://www.cjpj.de/contact.htm#terms" target="_blank" rel="noopener">The MIT License</a></li>
+			<li><a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener">Open Data Datenlizenz Deutschland - Namensnennung - Version 2.0</a></li>
+		</ul>
+		<br />
+	</div>
+</div>
+
+</body>
+</html>
