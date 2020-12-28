@@ -2,6 +2,7 @@
 Simple Corona Info is a progressive web app (PWA) showing information about new cases in Germany compared to the previous day
 and 7 day incidence for German counties (Landkreise). You can save the 7 day inicidence (cases in the last 7 days/100000 PE) for 10 counties.
 This PWA idea was inspired by the [COVID-19 Inzidenz-Widget für iOS](https://gist.github.com/malakka/0576bb922e7b81b95137a06b619bba1b)
+
 Working sample of the PWA can be found here: https://cinfo.cjpj.de
 
 ## Data Saving
