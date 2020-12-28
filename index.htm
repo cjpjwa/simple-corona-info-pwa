@@ -55,6 +55,7 @@ body				{padding:0px; margin:0px; background:#cccccc; color:#333333; font-family
 .content select			 	{padding:7px 0px 7px 10px; margin:10px 5px 10px 5%; color:#333333; width:60%; background:#eeeeee; border:1px solid #333333; border-radius:5px; font-size:16px;}
 .content div#newlist		{font-family: monospace; font-weight:bold; font-size:52px; text-align:center; padding:0px 10px 0px 10px; color:#990000}
 .content div#daterefresh	{position:fixed; bottom:0px; left:0px; color:#eeeeee; font-size:18px; padding:2px 10px 2px 10px; margin:0px; width:100%; background:#333333; text-align:center}
+.content strong#datelist	{color:#ffff66}
 
 .content table 						{border:1px solid #333333; margin:10px 6% 25px 6%; width:88%; font-size:16px; border-radius:5px; border-spacing:0px}
 .content table th					{padding: 10px; background: #333333; color:#eeeeee; font-weight:normal}
@@ -86,6 +87,8 @@ p.footer a			{color:#333333}
 //##########################################################
 // Date			Version			Description
 // 23.12.2020	0.1alpha		initial version
+// 25.12.2020	0.2alpha		update error msg, highlite footer date
+//								check for no connection
 //##########################################################
 // based on: https://www.cjpj.de/appshell.htm
 // Simple App Shell, (c) 2020 webapps@cjpj, P. Janko
@@ -97,8 +100,8 @@ p.footer a			{color:#333333}
 
 //##########################################################
 //basic global vars
-var appVersion = "0.1alpha Test";
-var appRelease = "23.12.2020";
+var appVersion = "0.2alpha Test";
+var appRelease = "25.12.2020";
 //global array with all pages
 var appPages = new Array();
 
@@ -131,6 +134,7 @@ var dataContainerObjNC;		//obj for neuinfektionen
 //var dataJasonURLNC = "sample_gesamt.json";
 
 //################# msg section #################
+//info messages
 var msg00 = "Bitte einen Landkreis aus der Liste wählen!";
 var msg01 = "Achtung!\n\nSpeichern wird nicht unterstützt.\nNach Schließen des Browsers sind die Daten verloren!";
 var msg02 = "Max. Anzahl von " + maxNofIDs + " Einträgen erreicht!\nUm neue anzulegen, bitte Einträge löschen.";
@@ -138,7 +142,10 @@ var msg03 = "Diesen Eintrag löschen?";
 var msg04 = "Noch keine Landkreise gespeichert.<br />Landkreis wählen und Speichern drücken.";
 var msg05 = "Eintrag existiert schon in der Liste!";
 var msg06 = "Alle Einträge löschen?";
-
+//error messages
+var errMsg01 = "<p>Keine Internet-Verbindung!<br />Bitte Internet-Verbindung prüfen<br />und erneut versuchen!<br />Ganz unten Aktualisieren drücken.</p>";
+var errMsg02 = "<p>Lade Fehler!<br />Bitte Internet-Verbindung prüfen<br />und erneut versuchen!<br />Ganz unten Aktualisieren drücken.</p>";
+var errMsg03 = "<p>Lade Fehler<br />(no ajax support)<br />Dieser Browser kann Daten nicht laden!</p>";
 //status messages
 var msgS01 = "Verbunden";
 var msgS02 = "Getrennt";
@@ -253,31 +260,37 @@ function initApp() {
 //show new cases, lk dropdown, saved lk and current date
 //-dtype: data type, lk = show dropdown+saved lk, nc = show new cases
 function showJasonData(dtype) {
-	if (dtype === "lk") {
-		//show lk dropdwon #################################
-		var containerSB = "<option value=\"0\">Landkreis wählen:</option>";
-		var helperArr = new Array(); 	//array for sorting
-		for (var i = 0; i < dataContainerObjLK.features.length; i++) {
-			//option entries for lk drowpdown
-			var jsonStr = "<!--" + dataContainerObjLK.features[i].attributes.GEN + "--><option value=\"" + dataContainerObjLK.features[i].attributes.OBJECTID + "\">" + dataContainerObjLK.features[i].attributes.GEN + " (" + dataContainerObjLK.features[i].attributes.BEZ +")</option>";
-			helperArr.push(jsonStr);
+	//check connection to prevent display of cached json data
+	if (window.navigator.onLine) {
+		if (dtype === "lk") {
+			//show lk dropdwon #################################
+			var containerSB = "<option value=\"0\">Landkreis wählen:</option>";
+			var helperArr = new Array(); 	//array for sorting
+			for (var i = 0; i < dataContainerObjLK.features.length; i++) {
+				//option entries for lk drowpdown
+				var jsonStr = "<!--" + dataContainerObjLK.features[i].attributes.GEN + "--><option value=\"" + dataContainerObjLK.features[i].attributes.OBJECTID + "\">" + dataContainerObjLK.features[i].attributes.GEN + " (" + dataContainerObjLK.features[i].attributes.BEZ +")</option>";
+				helperArr.push(jsonStr);
+			}
+			//fill str buffer with sorted items
+			helperArr.sort();
+			helperArr.forEach(function(item) {containerSB = containerSB + item;});
+			document.getElementById("lklist").innerHTML = "<select id=\"lkvalues\">" + containerSB + "</select><button type=\"button\" onclick=\"saveLKToList()\">Speichern</button>";
+			//show saved lk ###################################
+			loadObjectIDs();
+			updateLKList();
+		} else if (dtype === "nc") {
+			//shwo new cases ###################################
+			var newCases = dataContainerObjNC.features[0].attributes.value;
+			document.getElementById("newlist").innerHTML = "+" + newCases;
 		}
-		//fill str buffer with sorted items
-		helperArr.sort();
-		helperArr.forEach(function(item) {containerSB = containerSB + item;});
-		document.getElementById("lklist").innerHTML = "<select id=\"lkvalues\">" + containerSB + "</select><button type=\"button\" onclick=\"saveLKToList()\">Speichern</button>";
-		//show saved lk ###################################
-		loadObjectIDs();
-		updateLKList();
-	} else if (dtype === "nc") {
-		//shwo new cases ###################################
-		var newCases = dataContainerObjNC.features[0].attributes.value;
-		document.getElementById("newlist").innerHTML = "+" + newCases;
+		//show current date ###################################
+		var dateObj = new Date();
+		var currentDate = dateObj.getDate() + "." + (dateObj.getMonth()+1) + "." + dateObj.getFullYear();
+		document.getElementById("datelist").innerHTML = currentDate;
+	} else {
+		//info for no connection
+		document.getElementById("newlist").innerHTML = errMsg01;
 	}
-	//show current date ###################################
-	var dateObj = new Date();
-	var currentDate = dateObj.getDate() + "." + (dateObj.getMonth()+1) + "." + dateObj.getFullYear();
-	document.getElementById("datelist").innerHTML = currentDate;
 }
 
 //##########################################################
@@ -308,12 +321,12 @@ function readJsonData(dtype) {
 		xmlhttpObj.open("GET", dataJasonURL, true);
 		xmlhttpObj.onerror = function() {
 			//console.log("Ajax load error!");
-			document.getElementById("newlist").innerHTML = "<p>Lade Fehler!<br />Bitte erneut versuchen!<br />Ganz unten Aktualisieren drücken.</p>";
+			document.getElementById("newlist").innerHTML = errMsg02;
 		};
 		xmlhttpObj.send();
 	} else {
 		//console.log("No ajax support!");
-		document.getElementById("newlist").innerHTML = "<p>Lade Fehler - (no ajax support)<br />Dieser Browser kann Daten nicht laden!</p>";
+		document.getElementById("newlist").innerHTML = errMsg03;
 	}
 }
 
@@ -471,7 +484,7 @@ function deleteAllLK() {
 				</thead>
 				<tbody id="lkrows">
 					<tr><td></td><td></td><td></td></tr>
-					<tr><td colspan="3" class="desc">Noch keine Landkreise gespeichert.<br />Landkreis wählen und Speichern drücken.</td></tr>
+					<tr><td colspan="3" class="desc" style="background:#cccccc">- Lade Daten -</td></tr>
 				</tbody>
 			</table>
 			<p>Keine Gewähr für Richtigkeit der bereitgestellten Informationen, siehe <a href="https://www.cjpj.de/contact.htm#termsde" target="_blank" rel="noopener">Nutzungsbedingungen</a>.</p>
@@ -490,9 +503,9 @@ function deleteAllLK() {
 	</div>
 	<div class="content">
 		<br />
-		<p><strong>Simple Corona Info</strong> zeigt die Anzahl der COVID-19 Neuinfektionen für Deutschand zum Vortag und die 7-Tage-Inzidenz der Landkreise.</p>
+		<p><strong>Simple Corona Info</strong> zeigt die Anzahl der COVID-19 Neuinfektionen für Deutschand zum Vortag und die 7-Tage-Inzidenz der Landkreise. Bitte die Daten nach jedem Start Aktualisieren.</p>
 		<p>Maximal <span id="maxlk"></span> Landkreise können abgespeichert werden. Die gespeicherten Landkreise werden nach Start der WebApp automatisch mit ihrer 7-Tage-Inzidenz angezeigt.
-		Bitte die <a href="https://www.cjpj.de/contact.htm#savede" target="_blank" rel="noopener">Wichtigen Speicherhinweise</a> beachten.</p>
+		Bitte die <a href="https://www.cjpj.de/contact.htm#savede" target="_blank" rel="noopener">Wichtigen Speicherhinweise</a> beachten. </p>
 		<button style="margin:10px 10% 10px 10%; width:80%" type="button" onclick="deleteAllLK()">Alle Einräge löschen</button>
 		<p>Keine Gewähr für Funktion und Richtigkeit der bereitgestellten Informationen! Weitere Details unter <a href="https://www.cjpj.de/contact.htm#termsde" target="_blank" rel="noopener">Nutzungsbedingungen (Lizenz)</a>.</p>
  		<hr />
