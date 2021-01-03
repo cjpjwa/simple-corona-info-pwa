@@ -46,6 +46,7 @@ body				{padding:0px; margin:0px; background:#cccccc; color:#333333; font-family
 .content p 			{padding: 0px; margin:10px 25px 10px 25px; font-size:14px; font-weight:normal; line-height: 20px; text-align:center}
 .content li			{padding: 0px 0px 5px 0px; margin: 0px; font-size:14px; font-weight:normal;}
 .content a			{color:#333333}
+.content dialog		{padding: 0px; width:250px; height:275px; background:#d6d6d6; box-shadow: 1px 1px 40px 1px #333333; border:1px solid #333333; border-radius:5px; text-align:center;}
 
 .content button 		{padding:8px 10px 8px 10px; margin:10px 5% 10px 5px; color:#eeeeee; text-align:center; background:#333333; border:1px solid #eeeeee; cursor:pointer; border-radius:5px; font-size:16px; font-weight:normal;}
 .content button.bsmall 	{padding:5px 10px 5px 10px; margin:0px}
@@ -88,6 +89,8 @@ p.footer a			{color:#333333}
 // 23.12.2020	0.1alpha		initial version
 // 25.12.2020	0.2alpha		update error msg, highlite footer date
 //								check for no connection
+// 31.12.2020	0.3alpha		update new cases url, add github info,
+//								add details for LK (EWZ,cases,deaths)
 //##########################################################
 // based on: https://www.cjpj.de/appshell.htm
 // Simple App Shell, (c) 2020 webapps@cjpj, P. Janko
@@ -99,8 +102,8 @@ p.footer a			{color:#333333}
 
 //##########################################################
 //basic global vars
-var appVersion = "0.2alpha Test";
-var appRelease = "25.12.2020";
+var appVersion = "0.3alpha Test";
+var appRelease = "31.12.2020";
 //global array with all pages
 var appPages = new Array();
 
@@ -116,13 +119,14 @@ var maxNofIDs = 10;
 //############################################################################
 //RKI Corona Landkreise, Nationale Plattform für geographische Daten (NPGEO-DE)
 //Source https://npgeo-corona-npgeo-de.hub.arcgis.com/datasets/917fc37a709542548cc3be077a786c17_0
-var dataJasonURLLK = "https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_Landkreisdaten/FeatureServer/0/query?where=1%3D1&outFields=OBJECTID,GEN,BEZ,last_update,cases7_per_100k_txt&returnGeometry=false&outSR=4326&f=json";
+var dataJasonURLLK = "https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_Landkreisdaten/FeatureServer/0/query?where=1%3D1&outFields=OBJECTID,GEN,BEZ,EWZ,cases,deaths,last_update,cases7_lk,cases7_per_100k_txt&returnGeometry=false&outSR=4326&f=json";
 //############################################################################
 //RKI_COVID19
 //Tabelle mit den aktuellen Covid-19 Infektionen pro Tag (Zeitreihe).
 //Source: https://hub.arcgis.com/datasets/dd4580c810204019a7b8eb3e0b329dd6
-//Query URL for new cases from https://gist.github.com/malakka/0576bb922e7b81b95137a06b619bba1b
-var dataJasonURLNC = "https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_COVID19/FeatureServer/0/query?f=json&where=NeuerFall%20IN(1%2C%20-1)&returnGeometry=false&spatialRel=esriSpatialRelIntersects&outFields=*&outStatistics=%5B%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22AnzahlFall%22%2C%22outStatisticFieldName%22%3A%22value%22%7D%5D&resultType=standard&cacheHint=true";
+//https://services7.arcgis.com/mOBPykOjAyBO2ZKk/ArcGIS/rest/services/RKI_COVID19/FeatureServer/0
+//Query info for new cases from https://gist.github.com/malakka/0576bb922e7b81b95137a06b619bba1b
+var dataJasonURLNC = "https://services7.arcgis.com/mOBPykOjAyBO2ZKk/ArcGIS/rest/services/RKI_COVID19/FeatureServer/0/query?where=NeuerFall+IN%281%2C+-1%29&resultType=standard&outFields=*&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=true&outStatistics=%5B%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22AnzahlFall%22%2C%22outStatisticFieldName%22%3A%22value%22%7D%5D&sqlFormat=none&f=pjson";
 
 //gobal json Objects
 var dataContainerObjLK;		//obj for Landkreise
@@ -361,9 +365,23 @@ function updateLKList() {
 				var lk_BEZ = dataContainerObjLK.features[n].attributes.BEZ;
 				var lk_LU  = dataContainerObjLK.features[n].attributes.last_update.substr(0,17);
 				var lk_C7T = dataContainerObjLK.features[n].attributes.cases7_per_100k_txt;
+				var lk_C7LK = dataContainerObjLK.features[n].attributes.cases7_lk
+				var lk_CASES = dataContainerObjLK.features[n].attributes.cases;
+				var lk_DEATHS = dataContainerObjLK.features[n].attributes.deaths
+				var lk_EWZ = dataContainerObjLK.features[n].attributes.EWZ;
+				//set values for missing data
+				if ((lk_ID == null) || (lk_ID === "")) {lk_ID = "No Data"};
+				if ((lk_GEN == null) || (lk_GEN === "")) {lk_GEN = "No Data"};
+				if ((lk_BEZ == null) || (lk_BEZ === "")) {lk_BEZ = "No Data"};
+				if ((lk_LU == null) || (lk_LU === "")) {lk_LU = "No Data"};
+				if ((lk_C7T == null) || (lk_C7T === "")) {lk_C7T = "No Data"};
+				if ((lk_C7LK == null) || (lk_C7LK === "")) {lk_C7LK = "No Data"};
+				if ((lk_CASES == null) || (lk_CASES === "")) {lk_CASES = "No Data"};
+				if ((lk_DEATHS == null) || (lk_DEATHS === "")) {lk_DEATHS = "No Data"};
+				if ((lk_EWZ == null) || (lk_EWZ === "")) {lk_EWZ = "No Data"};
 				//get matching LK values form json Obj
 				if (objectID === lk_ID) {
-					rowLK = "<tr><td style=\"text-align:left;\">" + lk_GEN + " <span><br />" + lk_BEZ + ", <span style=\"white-space:nowrap\">" + lk_LU + "</span></span></td><td><strong style=\"color:" + setColor(lk_C7T) + "\">" + lk_C7T + "</strong></td><td><button class=\"bsmall\" onclick=\"deleteLKFromList(" + lk_ID + ",'" + lk_GEN + "','" + lk_BEZ + "')\">X</button></td></tr>";
+					rowLK = "<tr><td style=\"text-align:left;\" onclick=\"showLKDetails('"+lk_GEN +"','"+lk_BEZ+"','"+lk_LU+"','"+lk_C7LK+"','"+lk_CASES+"','"+lk_DEATHS+"','"+lk_EWZ+"')\">" + lk_GEN + " <span><br />" + lk_BEZ + ", <span style=\"white-space:nowrap\">" + lk_LU + "</span></span></td><td><strong style=\"color:" + setColor(lk_C7T) + "\">" + lk_C7T + "</strong></td><td><button class=\"bsmall\" onclick=\"deleteLKFromList(" + lk_ID + ",'" + lk_GEN + "','" + lk_BEZ + "')\">X</button></td></tr>";
 				}
 			}
 			rowSB = rowSB + rowLK;
@@ -371,6 +389,29 @@ function updateLKList() {
 	}
 	//update LK table
 	document.getElementById("lkrows").innerHTML = rowSB;
+}
+
+
+//##########################################################
+//show details for LK
+//- lkgen:		lk name (string)
+//- lkbez:		lk type (string)
+//- lklu:		lk last update (string)
+//- lkcases7:	lk cases 7 days (string)
+//- lkcases:	lk cases complete (string)
+//- lkdeaths:   lk deaths complete (string)
+//- lkewz: 		lk pouplation (string)
+function showLKDetails(lkgen,lkbez,lklu,lkcases7,lkcases,lkdeaths,lkewz) {
+	//check for modal dialog
+	try {
+		//open modal dialog
+		var modalDialog = document.getElementById("lkdetails");
+		modalDialog.innerHTML =	"<p><strong>" + lkgen + " (" + lkbez + ")</strong></p><hr /><p>Fälle letzte 7 Tage: <strong>" + lkcases7 + "</strong><br />Fälle gesamt: <strong>" + lkcases + "</strong><br />Todesfälle gesamt: <strong>" + lkdeaths + "</strong><br />Einwohnerzahl: <strong>" + lkewz + "</strong></p><p>Aktualisierung:<br /><strong>" + lklu + "</strong></p><button type=\"button\" onclick=\"document.getElementById('lkdetails').close();\">Schließen</button>";
+		modalDialog.showModal();
+	} catch(err) {
+		//show alert box fallback
+		alert(lkgen + " (" + lkbez + ")\n\nFälle letzte 7 Tage: " + lkcases7 + "\nFälle gesamt: " + lkcases + "\nTodesfälle gesamt: " + lkdeaths + "\nEinwohnerzahl: " + lkewz + "\n\nAktualisierung: " + lklu);
+	}
 }
 
 //##########################################################
@@ -489,6 +530,7 @@ function deleteAllLK() {
 			<p>Keine Gewähr für Richtigkeit der bereitgestellten Informationen, siehe <a href="https://www.cjpj.de/contact.htm#termsde" target="_blank" rel="noopener">Nutzungsbedingungen</a>.</p>
 			<p class="footer">Simple Corona Info <span class="fversion"></span></p>
 			<br />
+			<dialog id="lkdetails"></dialog>
 		</form>
  		<div id="daterefresh"><button type="button" onclick="refreshDataList()">Datum: <strong id="datelist"></strong> - Aktualisieren</button></div>
 	</div>
@@ -502,11 +544,14 @@ function deleteAllLK() {
 	</div>
 	<div class="content">
 		<br />
-		<p><strong>Simple Corona Info</strong> zeigt die Anzahl der COVID-19 Neuinfektionen für Deutschand zum Vortag und die 7-Tage-Inzidenz der Landkreise. Bitte die Daten nach jedem Start Aktualisieren.</p>
-		<p>Maximal <span id="maxlk"></span> Landkreise können abgespeichert werden. Die gespeicherten Landkreise werden nach Start der WebApp automatisch mit ihrer 7-Tage-Inzidenz angezeigt.
-		Bitte die <a href="https://www.cjpj.de/contact.htm#savede" target="_blank" rel="noopener">Wichtigen Speicherhinweise</a> beachten. </p>
-		<button style="margin:10px 10% 10px 10%; width:80%" type="button" onclick="deleteAllLK()">Alle Einräge löschen</button>
-		<p>Keine Gewähr für Funktion und Richtigkeit der bereitgestellten Informationen! Weitere Details unter <a href="https://www.cjpj.de/contact.htm#termsde" target="_blank" rel="noopener">Nutzungsbedingungen (Lizenz)</a>.</p>
+		<p><strong>Simple Corona Info</strong> zeigt die Anzahl der COVID-19 Neuinfektionen für Deutschand zum Vortag und die 7-Tage-Inzidenz der Landkreise. Bitte die Daten nach jedem Start aktualisieren.</p>
+		<p>Maximal <span id="maxlk"></span> Landkreise können abgespeichert werden. Die gespeicherten Landkreise werden nach Start der Web App automatisch mit ihrer 7-Tage-Inzidenz angezeigt.
+		Tippen auf den Landkreisnamen zeigt zusätzlich Fälle der letzten 7 Tage, Fälle gesamt, Todesfälle gesamt und Einwohnerzahl.
+		Bitte die <a href="https://www.cjpj.de/contact.htm#savede" target="_blank" rel="noopener">Wichtigen Speicherhinweise</a> beachten.</p>
+		<button style="margin:10px 10% 10px 10%; width:80%" type="button" onclick="deleteAllLK()">Alle Einträge löschen</button>
+		<p>Anregung zur Erstellung dieser Web App war das <a href="https://gist.github.com/malakka/0576bb922e7b81b95137a06b619bba1b" target="_blank"  rel="noopener">COVID-19 Inzidenz-Widget für iOS</a>.</p>
+		<p>Simple Corona Info steht unter der <a href="https://github.com/cjpjwa/simple-corona-info-pwa/blob/main/LICENSE" target="_blank"  rel="noopener">MIT Lizenz</a> und ist verfügbar auf <a href="https://github.com/cjpjwa/simple-corona-info-pwa" target="_blank"  rel="noopener">GitHub</a>.
+		Keine Gewähr für Funktion und Richtigkeit der bereitgestellten Informationen!.</p>
  		<hr />
 		<h2>Quellenvermerk</h2>
 		<p>Robert Koch-Institut (RKI), dl-de/by-2-0<br />Die Daten sind die "Fallzahlen in Deutschland" des <a href="https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Fallzahlen.html" target="_blank" rel="noopener">Robert Koch-Institut (RKI)</a> und stehen unter der
@@ -530,6 +575,7 @@ function deleteAllLK() {
 			<li><strong style="color:#da0183">Inzidenz ab 500</strong></li>
 		</ul>
 		<hr />
+		<h2>Info</h2>
 		<ul>
 			<li>App Titel: <strong>Simple Corona Info</strong></li>
 			<li>Version: <strong id="version">-</strong></li>
