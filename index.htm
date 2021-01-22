@@ -91,6 +91,7 @@ p.footer a			{color:#333333}
 //								check for no connection
 // 31.12.2020	0.3alpha		update new cases url, add github info,
 //								add details for LK (EWZ,cases,deaths)
+// 20.01.2021	0.4lpha			add info about update time at 3 am
 //##########################################################
 // based on: https://www.cjpj.de/appshell.htm
 // Simple App Shell, (c) 2020 webapps@cjpj, P. Janko
@@ -102,8 +103,8 @@ p.footer a			{color:#333333}
 
 //##########################################################
 //basic global vars
-var appVersion = "0.3alpha Test";
-var appRelease = "31.12.2020";
+var appVersion = "0.4alpha Test";
+var appRelease = "20.01.2021";
 //global array with all pages
 var appPages = new Array();
 
@@ -145,6 +146,7 @@ var msg03 = "Diesen Eintrag löschen?";
 var msg04 = "Noch keine Landkreise gespeichert.<br />Landkreis wählen und Speichern drücken.";
 var msg05 = "Eintrag existiert schon in der Liste!";
 var msg06 = "Alle Einträge löschen?";
+var msg07 = "Datenstand event. noch vom Vortag.\nAktualisierung erfolgt ab ca. 03:00 Uhr. ";
 //error messages
 var errMsg01 = "<p>Keine Internet-Verbindung!<br />Bitte Internet-Verbindung prüfen<br />und erneut versuchen!<br />Ganz unten Aktualisieren drücken.</p>";
 var errMsg02 = "<p>Lade Fehler!<br />Bitte Internet-Verbindung prüfen<br />und erneut versuchen!<br />Ganz unten Aktualisieren drücken.</p>";
@@ -289,6 +291,8 @@ function showJasonData(dtype) {
 		//show current date ###################################
 		var dateObj = new Date();
 		var currentDate = dateObj.getDate() + "." + (dateObj.getMonth()+1) + "." + dateObj.getFullYear();
+		var currentTime = dateObj.getHours();
+		if ((currentTime > 0) && (currentTime < 4)) {alert(msg07);}  //note: update at 3:00
 		document.getElementById("datelist").innerHTML = currentDate;
 	} else {
 		//info for no connection
@@ -551,7 +555,7 @@ function deleteAllLK() {
 		<button style="margin:10px 10% 10px 10%; width:80%" type="button" onclick="deleteAllLK()">Alle Einträge löschen</button>
 		<p>Anregung zur Erstellung dieser Web App war das <a href="https://gist.github.com/malakka/0576bb922e7b81b95137a06b619bba1b" target="_blank"  rel="noopener">COVID-19 Inzidenz-Widget für iOS</a>.</p>
 		<p>Simple Corona Info steht unter der <a href="https://github.com/cjpjwa/simple-corona-info-pwa/blob/main/LICENSE" target="_blank"  rel="noopener">MIT Lizenz</a> und ist verfügbar auf <a href="https://github.com/cjpjwa/simple-corona-info-pwa" target="_blank"  rel="noopener">GitHub</a>.
-		Keine Gewähr für Funktion und Richtigkeit der bereitgestellten Informationen!.</p>
+		Keine Gewähr für Funktion und Richtigkeit der bereitgestellten Informationen!</p>
  		<hr />
 		<h2>Quellenvermerk</h2>
 		<p>Robert Koch-Institut (RKI), dl-de/by-2-0<br />Die Daten sind die "Fallzahlen in Deutschland" des <a href="https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Fallzahlen.html" target="_blank" rel="noopener">Robert Koch-Institut (RKI)</a> und stehen unter der
