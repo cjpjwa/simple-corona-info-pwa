@@ -5,6 +5,8 @@ Typing on the county name shows additional data (cases, population ...). This PW
 
 Working sample of the PWA can be found here: https://cinfo.cjpj.de
 
+![Screenshot sample app](https://github.com/cjpjwa/simple-corona-info-pwa/blob/06f690e9b300cfa247ff4f0e9facba8270cad231/screenshot/screenshot_02.png?raw=true)
+
 ## Data Saving
 The county ID is saved via localstorage. 
 
