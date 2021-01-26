@@ -91,7 +91,8 @@ p.footer a			{color:#333333}
 //								check for no connection
 // 31.12.2020	0.3alpha		update new cases url, add github info,
 //								add details for LK (EWZ,cases,deaths)
-// 20.01.2021	0.4lpha			add info about update time at 3 am
+// 20.01.2021	0.4alpha		add info about update time at 3 am
+// 25.01.2021	0.5alpha		set info about update time from 0:00 - 3:59am
 //##########################################################
 // based on: https://www.cjpj.de/appshell.htm
 // Simple App Shell, (c) 2020 webapps@cjpj, P. Janko
@@ -103,8 +104,8 @@ p.footer a			{color:#333333}
 
 //##########################################################
 //basic global vars
-var appVersion = "0.4alpha Test";
-var appRelease = "20.01.2021";
+var appVersion = "0.5alpha Test";
+var appRelease = "25.01.2021";
 //global array with all pages
 var appPages = new Array();
 
@@ -146,7 +147,7 @@ var msg03 = "Diesen Eintrag löschen?";
 var msg04 = "Noch keine Landkreise gespeichert.<br />Landkreis wählen und Speichern drücken.";
 var msg05 = "Eintrag existiert schon in der Liste!";
 var msg06 = "Alle Einträge löschen?";
-var msg07 = "Datenstand event. noch vom Vortag.\nAktualisierung erfolgt ab ca. 03:00 Uhr. ";
+var msg07 = "Datenstand event. noch vom Vortag.\nAktualisierung meist nachts um ca. 3 Uhr (MEZ).";
 //error messages
 var errMsg01 = "<p>Keine Internet-Verbindung!<br />Bitte Internet-Verbindung prüfen<br />und erneut versuchen!<br />Ganz unten Aktualisieren drücken.</p>";
 var errMsg02 = "<p>Lade Fehler!<br />Bitte Internet-Verbindung prüfen<br />und erneut versuchen!<br />Ganz unten Aktualisieren drücken.</p>";
@@ -292,7 +293,7 @@ function showJasonData(dtype) {
 		var dateObj = new Date();
 		var currentDate = dateObj.getDate() + "." + (dateObj.getMonth()+1) + "." + dateObj.getFullYear();
 		var currentTime = dateObj.getHours();
-		if ((currentTime > 0) && (currentTime < 4)) {alert(msg07);}  //note: update at 3:00
+        if ((currentTime >= 0) && (currentTime < 4) && (dtype === "nc")) {alert(msg07);}  //note: update about 3:00 am (set info time from 0:00-3:59 am)
 		document.getElementById("datelist").innerHTML = currentDate;
 	} else {
 		//info for no connection
