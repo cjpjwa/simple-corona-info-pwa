@@ -93,6 +93,7 @@ p.footer a			{color:#333333}
 //								add details for LK (EWZ,cases,deaths)
 // 20.01.2021	0.4alpha		add info about update time at 3 am
 // 25.01.2021	0.5alpha		set info about update time from 0:00 - 3:59am
+// 28.02.2021	0.6alpha		fix showmodal bug in ios
 //##########################################################
 // based on: https://www.cjpj.de/appshell.htm
 // Simple App Shell, (c) 2020 webapps@cjpj, P. Janko
@@ -104,8 +105,8 @@ p.footer a			{color:#333333}
 
 //##########################################################
 //basic global vars
-var appVersion = "0.5alpha Test";
-var appRelease = "25.01.2021";
+var appVersion = "0.6alpha Test";
+var appRelease = "28.02.2021";
 //global array with all pages
 var appPages = new Array();
 
@@ -409,9 +410,12 @@ function updateLKList() {
 function showLKDetails(lkgen,lkbez,lklu,lkcases7,lkcases,lkdeaths,lkewz) {
 	//check for modal dialog
 	try {
-		//open modal dialog
-		var modalDialog = document.getElementById("lkdetails");
-		modalDialog.innerHTML =	"<p><strong>" + lkgen + " (" + lkbez + ")</strong></p><hr /><p>Fälle letzte 7 Tage: <strong>" + lkcases7 + "</strong><br />Fälle gesamt: <strong>" + lkcases + "</strong><br />Todesfälle gesamt: <strong>" + lkdeaths + "</strong><br />Einwohnerzahl: <strong>" + lkewz + "</strong></p><p>Aktualisierung:<br /><strong>" + lklu + "</strong></p><button type=\"button\" onclick=\"document.getElementById('lkdetails').close();\">Schließen</button>";
+		//fix ios problem: shows dialog under table before running in catch block
+		if ((navigator.userAgent.toLowerCase().indexOf("iphone") === -1) && (navigator.userAgent.toLowerCase().indexOf("ipad") === -1) && (navigator.userAgent.toLowerCase().indexOf("ipod") === -1)) {
+			//open modal dialog
+			var modalDialog = document.getElementById("lkdetails");
+			modalDialog.innerHTML =	"<p><strong>" + lkgen + " (" + lkbez + ")</strong></p><hr /><p>Fälle letzte 7 Tage: <strong>" + lkcases7 + "</strong><br />Fälle gesamt: <strong>" + lkcases + "</strong><br />Todesfälle gesamt: <strong>" + lkdeaths + "</strong><br />Einwohnerzahl: <strong>" + lkewz + "</strong></p><p>Aktualisierung:<br /><strong>" + lklu + "</strong></p><button type=\"button\" onclick=\"document.getElementById('lkdetails').close();\">Schließen</button>";
+		}
 		modalDialog.showModal();
 	} catch(err) {
 		//show alert box fallback
