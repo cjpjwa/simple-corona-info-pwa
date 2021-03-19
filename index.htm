@@ -95,6 +95,8 @@ p.footer a			{color:#333333}
 // 25.01.2021	0.5alpha		set info about update time from 0:00 - 3:59am
 // 28.02.2021	0.6alpha		fix showmodal bug in ios
 // 11.03.2021	0.7alpha		add inzidenz for bundesland in LK details
+// 14.03.2021	0.8alpha		add integrity test for data, add link to corona.rki.de,
+//								add date for newcases
 //##########################################################
 // based on: https://www.cjpj.de/appshell.htm
 // Simple App Shell, (c) 2020 webapps@cjpj, P. Janko
@@ -106,8 +108,8 @@ p.footer a			{color:#333333}
 
 //##########################################################
 //basic global vars
-var appVersion = "0.7alpha Test";
-var appRelease = "11.03.2021";
+var appVersion = "0.8alpha Test";
+var appRelease = "14.03.2021";
 //global array with all pages
 var appPages = new Array();
 
@@ -262,6 +264,24 @@ function initApp() {
 //##########################################################
 
 //##########################################################
+//check for data integrity (no scripting included)
+//-checkStr:  data to be checked (string/integer)
+function integrityCheck(checkStr) {
+	var reCheck = /[<>;=\'\"]/; 	//regex with not allowed content
+	var checkResult = false;
+	checkStr = checkStr.toString();
+	//console.log(checkStr);
+	if (reCheck.test(checkStr) === false) {
+		checkResult = true; //no scripting content found
+	} else {
+		checkResult = false; //scripting content found
+		document.getElementById("newlist").innerHTML = "DataError"; 	//show message
+	}
+	//return true for OK, false for NOT OK
+	return checkResult;
+}
+
+//##########################################################
 //show new cases, lk dropdown, saved lk and current date
 //-dtype: data type, lk = show dropdown+saved lk, nc = show new cases
 function showJasonData(dtype) {
@@ -274,7 +294,10 @@ function showJasonData(dtype) {
 			for (var i = 0; i < dataContainerObjLK.features.length; i++) {
 				//option entries for lk drowpdown
 				var jsonStr = "<!--" + dataContainerObjLK.features[i].attributes.GEN + "--><option value=\"" + dataContainerObjLK.features[i].attributes.OBJECTID + "\">" + dataContainerObjLK.features[i].attributes.GEN + " (" + dataContainerObjLK.features[i].attributes.BEZ +")</option>";
-				helperArr.push(jsonStr);
+				var testStr = dataContainerObjLK.features[i].attributes.OBJECTID + dataContainerObjLK.features[i].attributes.GEN + dataContainerObjLK.features[i].attributes.BEZ;
+				if (integrityCheck(testStr)) {
+					helperArr.push(jsonStr);
+				}
 			}
 			//fill str buffer with sorted items
 			helperArr.sort();
@@ -283,10 +306,19 @@ function showJasonData(dtype) {
 			//show saved lk ###################################
 			loadObjectIDs();
 			updateLKList();
+			//show date for new cases using lk data Berlin... (Workaround) ###################################
+			var currentLKDate = dataContainerObjLK.features[405].attributes.last_update;
+			if ((currentLKDate == null) || (currentLKDate === "")) {currentLKDate = "No Data"};
+			if (integrityCheck(currentLKDate)) {
+				document.getElementById("lkdate").innerHTML = currentLKDate.substr(0,10);
+			}
 		} else if (dtype === "nc") {
 			//shwo new cases ###################################
 			var newCases = dataContainerObjNC.features[0].attributes.value;
-			document.getElementById("newlist").innerHTML = "+" + newCases;
+			if ((newCases == null) || (newCases === "")) {newCases = "No Data"};
+			if (integrityCheck(newCases)) {
+				document.getElementById("newlist").innerHTML = "+" + newCases;
+			}
 		}
 		//show current date ###################################
 		var dateObj = new Date();
@@ -376,7 +408,6 @@ function updateLKList() {
 				//get bundesland data
 				var lk_BL = dataContainerObjLK.features[n].attributes.BL;
 				var lk_BLC7_100 = dataContainerObjLK.features[n].attributes.cases7_bl_per_100k;
-
 				//set values for missing data
 				if ((lk_ID == null) || (lk_ID === "")) {lk_ID = "No Data"};
 				if ((lk_GEN == null) || (lk_GEN === "")) {lk_GEN = "No Data"};
@@ -387,12 +418,15 @@ function updateLKList() {
 				if ((lk_CASES == null) || (lk_CASES === "")) {lk_CASES = "No Data"};
 				if ((lk_DEATHS == null) || (lk_DEATHS === "")) {lk_DEATHS = "No Data"};
 				if ((lk_EWZ == null) || (lk_EWZ === "")) {lk_EWZ = "No Data"};
-
 				if ((lk_BL == null) || (lk_BL === "")) {lk_BL = "No Data"};
 				if ((lk_BLC7_100 == null) || (lk_BLC7_100 === "")) {lk_BLC7_100 = "No Data"} else {lk_BLC7_100 = Math.round(lk_BLC7_100*10)/10}; //round to X.X
 				//get matching LK values form json Obj
 				if (objectID === lk_ID) {
-					rowLK = "<tr><td style=\"text-align:left; cursor:pointer;\" onclick=\"showLKDetails('"+lk_GEN +"','"+lk_BEZ+"','"+lk_LU+"','"+lk_C7LK+"','"+lk_CASES+"','"+lk_DEATHS+"','"+lk_EWZ+"','"+lk_BL+"','"+lk_BLC7_100+"')\">" + lk_GEN + " <span><br />" + lk_BEZ + ", <span style=\"white-space:nowrap\">" + lk_LU + "</span></span></td><td><strong style=\"color:" + setColor(lk_C7T) + "\">" + lk_C7T + "</strong></td><td><button class=\"bsmall\" onclick=\"deleteLKFromList(" + lk_ID + ",'" + lk_GEN + "','" + lk_BEZ + "')\">X</button></td></tr>";
+					//check for data integrity (no scripting included)
+					var testStr = lk_ID+lk_GEN+lk_BEZ+lk_LU+lk_C7T+lk_C7LK+lk_CASES+lk_DEATHS+lk_EWZ+lk_BL+lk_BLC7_100;
+				   	if (integrityCheck(testStr))  {
+						rowLK = "<tr><td style=\"text-align:left; cursor:pointer;\" onclick=\"showLKDetails('"+lk_GEN +"','"+lk_BEZ+"','"+lk_LU+"','"+lk_C7LK+"','"+lk_CASES+"','"+lk_DEATHS+"','"+lk_EWZ+"','"+lk_BL+"','"+lk_BLC7_100+"')\">" + lk_GEN + " <span><br />" + lk_BEZ + ", <span style=\"white-space:nowrap\">" + lk_LU + "</span></span></td><td><strong style=\"color:" + setColor(lk_C7T) + "\">" + lk_C7T + "</strong></td><td><button class=\"bsmall\" onclick=\"deleteLKFromList(" + lk_ID + ",'" + lk_GEN + "','" + lk_BEZ + "')\">X</button></td></tr>";
+					}
 				}
 			}
 			rowSB = rowSB + rowLK;
@@ -529,9 +563,9 @@ function deleteAllLK() {
 	</div>
 	<div class="content">
 		<form id="lkform" name="lkform" action="javascript:void(0)">
-			<h2>Neuinfektionen BRD</h2>
+			<h2>Neuinfektionen BRD <span style="font-size:14px; font-weight:normal"><br />zum Vortag</span></h2>
 			<div id="newlist">Lade Daten</div>
-			<p>zum Vortag</p>
+			<p>Stand: <strong id="lkdate"></strong></p>
 			<hr />
 			<div id="lklist" style="text-align:center;">Lade Daten</div>
 			<table>
@@ -561,6 +595,7 @@ function deleteAllLK() {
 	<div class="content">
 		<br />
 		<p><strong>Simple Corona Info</strong> zeigt die Anzahl der COVID-19 Neuinfektionen für Deutschand zum Vortag und die 7-Tage-Inzidenz der Landkreise. Bitte die Daten nach jedem Start aktualisieren.</p>
+		<p>Datenabruf über RKI <a href="https://corona.rki.de" target="_blank" rel="noopener"><strong>COVID-19 Dashboard (https://corona.rki.de)</strong></a>.</p>
 		<p>Maximal <span id="maxlk"></span> Landkreise können abgespeichert werden. Die gespeicherten Landkreise werden nach Start der Web App automatisch mit ihrer 7-Tage-Inzidenz angezeigt.
 		Tippen auf den Landkreisnamen zeigt zusätzlich Bundesland Inz., Fälle der letzten 7 Tage, Fälle gesamt, Todesfälle gesamt und Einwohnerzahl.
 		Bitte die <a href="https://www.cjpj.de/contact.htm#savede" target="_blank" rel="noopener">Wichtigen Speicherhinweise</a> beachten.</p>
