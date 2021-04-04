@@ -38,7 +38,7 @@ body				{padding:0px; margin:0px; background:#cccccc; color:#333333; font-family
 .header	a			{position:fixed; padding:7px; margin:0px; color:#eeeeee; font-weight:normal; font-size:16px; border: 1px solid #eeeeee; border-radius:5px;}
 .header	a.button0	{display:block; top:14px; left: 15px; text-decoration:none; padding:0px; margin:0px; color:#eeeeee; font-weight:normal; font-size:22px; border:none}
 .header	a.button1	{display:block; top:10px; right:10px; text-decoration:none;}
-.header	a.button2	{display:block; top:10px; right:70px; text-decoration:none;}
+.header	a.button2	{display:block; top:10px; right:65px; text-decoration:none;}
 .header	a:active	{color:#333333; background:#eeeeee}
 
 .content			{padding: 0px; margin:0px; position:absolute; top:55px; left:0px; width:100%; color:#333333;; z-index:10;}
@@ -97,6 +97,7 @@ p.footer a			{color:#333333}
 // 11.03.2021	0.7alpha		add inzidenz for bundesland in LK details
 // 14.03.2021	0.8alpha		add integrity test for data, add link to corona.rki.de,
 //								add date for newcases
+// 27.03.2021	0.9alpha		add history function for old values
 //##########################################################
 // based on: https://www.cjpj.de/appshell.htm
 // Simple App Shell, (c) 2020 webapps@cjpj, P. Janko
@@ -108,8 +109,8 @@ p.footer a			{color:#333333}
 
 //##########################################################
 //basic global vars
-var appVersion = "0.8alpha Test";
-var appRelease = "14.03.2021";
+var appVersion = "0.9alpha Test";
+var appRelease = "27.03.2021";
 //global array with all pages
 var appPages = new Array();
 
@@ -149,6 +150,7 @@ var msg04 = "Noch keine Landkreise gespeichert.<br />Landkreis wählen und Speic
 var msg05 = "Eintrag existiert schon in der Liste!";
 var msg06 = "Alle Einträge löschen?";
 var msg07 = "Datenstand event. noch vom Vortag.\nAktualisierung meist nachts um ca. 3 Uhr (MEZ).";
+var msg08 = "Die angezeigten Daten merken?\nAlte Daten werden überschrieben!";
 //error messages
 var errMsg01 = "<p>Keine Internet-Verbindung!<br />Bitte Internet-Verbindung prüfen<br />und erneut versuchen!<br />Ganz unten Aktualisieren drücken.</p>";
 var errMsg02 = "<p>Lade Fehler!<br />Bitte Internet-Verbindung prüfen<br />und erneut versuchen!<br />Ganz unten Aktualisieren drücken.</p>";
@@ -256,6 +258,8 @@ function initApp() {
 	//get the data from URL stream
 	readJsonData("lk");		//lk = landkreise
 	readJsonData("nc");		//new cases
+	//load history data
+	loadHistoryData();
 }
 
 
@@ -389,12 +393,15 @@ function setColor(inzidenz) {
 //update Landkreis list after adding or restart
 function updateLKList() {
 	var rowSB = ""; 	//str buffer with all rows
+	var rowSBHI = ""; 	//str buffer for history rows
 	if (trackObjectIDArr.length === 0) {
 		rowSB = "<tr><td colspan=\"3\" class=\"desc\">" + msg04 + "</td></tr>";
+		rowSBHI = "";
 	} else {
 		for (var i = 0; i < trackObjectIDArr.length; i++) {
 			var objectID = parseInt(trackObjectIDArr[i]);
-			var rowLK = "";    //row with LK data
+			var rowLK = "";		//row with LK data
+			var rowHI = "";		//row with history data
 			for (var n = 0; n < dataContainerObjLK.features.length; n++) {
 				var lk_ID  = dataContainerObjLK.features[n].attributes.OBJECTID;
 				var lk_GEN = dataContainerObjLK.features[n].attributes.GEN;
@@ -426,16 +433,19 @@ function updateLKList() {
 					var testStr = lk_ID+lk_GEN+lk_BEZ+lk_LU+lk_C7T+lk_C7LK+lk_CASES+lk_DEATHS+lk_EWZ+lk_BL+lk_BLC7_100;
 				   	if (integrityCheck(testStr))  {
 						rowLK = "<tr><td style=\"text-align:left; cursor:pointer;\" onclick=\"showLKDetails('"+lk_GEN +"','"+lk_BEZ+"','"+lk_LU+"','"+lk_C7LK+"','"+lk_CASES+"','"+lk_DEATHS+"','"+lk_EWZ+"','"+lk_BL+"','"+lk_BLC7_100+"')\">" + lk_GEN + " <span><br />" + lk_BEZ + ", <span style=\"white-space:nowrap\">" + lk_LU + "</span></span></td><td><strong style=\"color:" + setColor(lk_C7T) + "\">" + lk_C7T + "</strong></td><td><button class=\"bsmall\" onclick=\"deleteLKFromList(" + lk_ID + ",'" + lk_GEN + "','" + lk_BEZ + "')\">X</button></td></tr>";
+						rowHI = "<tr><td style=\"text-align:left;\">" + lk_GEN + " <span><br />" + lk_BEZ + ", <span style=\"white-space:nowrap\">" + lk_LU + "</span></span></td><td><strong style=\"color:" + setColor(lk_C7T) + "\">" + lk_C7T + "</strong></td></tr>";
 					}
 				}
 			}
-			rowSB = rowSB + rowLK;
+			rowSB   = rowSB + rowLK;
+			rowSBHI = rowSBHI + rowHI;
 		}
 	}
 	//update LK table
 	document.getElementById("lkrows").innerHTML = rowSB;
+	//update global history container var
+	historyList = rowSBHI;
 }
-
 
 //##########################################################
 //show details for LK
@@ -517,8 +527,8 @@ function saveObjectIDs() {
 	if (localStorage == null) {
 		alert(msg01);
 	} else {
-		//clear storage first, then save all items
-		localStorage.clear();
+		//remove item first, then save all items
+		localStorage.removeItem("LKOBJECTIDs");
 		//save IDs as string separated by #
 		localStorage.setItem("LKOBJECTIDs", trackObjectIDArr.join("#"));
 	}
@@ -536,6 +546,47 @@ function loadObjectIDs() {
 }
 
 //##########################################################
+//add infos to history list and save history data
+var historyList = ""; //global container var for history rows
+function updateHistory() {
+	if (confirm(msg08)) {
+		var historyDate = document.getElementById("datelist").innerHTML;    //get date from HTML view
+		var historyNew  = document.getElementById("newlist").innerHTML;		//get new cases from HTMl view
+		//update history table in info section
+		document.getElementById("histdate").innerHTML = historyDate;
+		document.getElementById("histnew").innerHTML  = historyNew;
+		if (historyList !== "") {document.getElementById("lkhirows").innerHTML = historyList;}
+		//save history data
+		if (localStorage != null) {
+			//remove items first, then save all items
+			localStorage.removeItem("LKHISTORYDATE");
+			localStorage.removeItem("LKHISTORYNEW");
+			localStorage.removeItem("LKHISTORYLIST");
+			//save items as string
+			localStorage.setItem("LKHISTORYDATE", historyDate);
+			localStorage.setItem("LKHISTORYNEW",  historyNew);
+			localStorage.setItem("LKHISTORYLIST", historyList);
+		}
+	}
+}
+
+//############################################################
+//load all history data
+function loadHistoryData() {
+	if (localStorage != null) {
+		if ((localStorage.getItem("LKHISTORYDATE") != null) && (localStorage.getItem("LKHISTORYDATE") !== "")) {
+			document.getElementById("histdate").innerHTML = localStorage.getItem("LKHISTORYDATE");
+		}
+		if ((localStorage.getItem("LKHISTORYNEW") != null) && (localStorage.getItem("LKHISTORYNEW") !== "")) {
+			document.getElementById("histnew").innerHTML = localStorage.getItem("LKHISTORYNEW");
+		}
+		if ((localStorage.getItem("LKHISTORYLIST") != null) && (localStorage.getItem("LKHISTORYLIST") !== "")) {
+			document.getElementById("lkhirows").innerHTML = localStorage.getItem("LKHISTORYLIST");
+		}
+	}
+}
+
+//##########################################################
 //reload data (trigger new jason load)
 function refreshDataList() {
 	document.location.reload(true);
@@ -547,7 +598,14 @@ function deleteAllLK() {
 	if (confirm(msg06)) {
 		localStorage.clear();
 		trackObjectIDArr = new Array();
+		//update start page
 		updateLKList();
+		//empty history info
+		historyList = "";
+		document.getElementById("histdate").innerHTML = "-";
+		document.getElementById("histnew").innerHTML = "";
+		document.getElementById("lkhirows").innerHTML = "<tr><td colspan=\"2\" class=\"desc\">- Noch keine Daten gemerkt -</td></tr>";
+		//show start page
 		location.hash = "#appstart";
 	}
 }
@@ -559,6 +617,7 @@ function deleteAllLK() {
 <div class="page" id="appstart">
 	<div class="header">
 		<h1>Simple Corona Info</h1>
+		<a class="button2" href="javascript:void(0)" onclick="updateHistory()">&nbsp; + &nbsp;</a>
 		<a class="button1" href="#info">Info</a>
 	</div>
 	<div class="content">
@@ -593,13 +652,21 @@ function deleteAllLK() {
 		<a class="button1" href="#appstart">Zurück</a>
 	</div>
 	<div class="content">
-		<br />
+		<table>
+		<thead>
+			<tr><th>Merkliste vom <span id="histdate">-</span></th><th id="histnew" style="text-align:right; font-weight:bold"></th></tr>
+		</thead>
+		<tbody id="lkhirows">
+			<tr><td colspan="2" class="desc">- Noch keine Daten gemerkt -</td></tr>
+		</tbody>
+		</table>
+		<hr />
+		<h2>Allgemein</h2>
 		<p><strong>Simple Corona Info</strong> zeigt die Anzahl der COVID-19 Neuinfektionen für Deutschand zum Vortag und die 7-Tage-Inzidenz der Landkreise. Bitte die Daten nach jedem Start aktualisieren.</p>
-		<p>Datenabruf über RKI <a href="https://corona.rki.de" target="_blank" rel="noopener"><strong>COVID-19 Dashboard (https://corona.rki.de)</strong></a>.</p>
+		<button style="margin:10px 10% 10px 10%; width:80%" type="button" onclick="deleteAllLK()">Alle Einträge löschen</button>
 		<p>Maximal <span id="maxlk"></span> Landkreise können abgespeichert werden. Die gespeicherten Landkreise werden nach Start der Web App automatisch mit ihrer 7-Tage-Inzidenz angezeigt.
 		Tippen auf den Landkreisnamen zeigt zusätzlich Bundesland Inz., Fälle der letzten 7 Tage, Fälle gesamt, Todesfälle gesamt und Einwohnerzahl.
 		Bitte die <a href="https://www.cjpj.de/contact.htm#savede" target="_blank" rel="noopener">Wichtigen Speicherhinweise</a> beachten.</p>
-		<button style="margin:10px 10% 10px 10%; width:80%" type="button" onclick="deleteAllLK()">Alle Einträge löschen</button>
 		<p>Anregung zur Erstellung dieser Web App war das <a href="https://gist.github.com/malakka/0576bb922e7b81b95137a06b619bba1b" target="_blank"  rel="noopener">COVID-19 Inzidenz-Widget für iOS</a>.</p>
 		<p>Simple Corona Info steht unter der <a href="https://github.com/cjpjwa/simple-corona-info-pwa/blob/main/LICENSE" target="_blank"  rel="noopener">MIT Lizenz</a> und ist verfügbar auf <a href="https://github.com/cjpjwa/simple-corona-info-pwa" target="_blank"  rel="noopener">GitHub</a>.
 		Keine Gewähr für Funktion und Richtigkeit der bereitgestellten Informationen!</p>
@@ -607,6 +674,7 @@ function deleteAllLK() {
 		<h2>Quellenvermerk</h2>
 		<p>Robert Koch-Institut (RKI), dl-de/by-2-0<br />Die Daten sind die "Fallzahlen in Deutschland" des <a href="https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Fallzahlen.html" target="_blank" rel="noopener">Robert Koch-Institut (RKI)</a> und stehen unter der
 		<a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener">Open Data Datenlizenz Deutschland - Namensnennung - Version 2.0</a> zur Verfügung.</p>
+		<p>Datenabruf über RKI <a href="https://corona.rki.de" target="_blank" rel="noopener"><strong>COVID-19 Dashboard (https://corona.rki.de)</strong></a>.</p>
 		<hr />
 		<h2>Status</h2>
 		<ul>
