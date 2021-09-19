@@ -63,6 +63,7 @@ body				{padding:0px; margin:0px; background:#cccccc; color:#333333; font-family
 .content table td strong			{font-size:18px; color:#333333}
 .content table td span				{font-size:12px;}
 .content table td.desc				{padding:15px; font-size:14px; text-align:center}
+.content table td a.direkt			{padding:3px 7px 3px 7px; margin:0px; color:#eeeeee; font-weight:normal; font-size:16px; border: 1px solid #eeeeee; border-radius:5px; background:#333333; text-decoration:none;}
 .content table tr:nth-child(even) 	{background-color: #eeeeee;}
 
 /* ########## footer settings ##########  */
@@ -74,6 +75,7 @@ p.footer a			{color:#333333}
 #info .content p	{padding:  5px 30px 10px 30px; margin: 0px; text-align:justify; font-size:14px}
 #info .content ul	{padding:  5px 30px 10px 30px; margin: 0px 0px 0px 5%}
 #info .content li	{text-align:left}
+#blinfo .content h2	{padding: 20px 30px 10px 30px; margin: 0px; font-weight:bold; font-size:20px; text-align:left}
 
 /* Larger than 800px  */
 @media (min-width: 800px) {
@@ -99,6 +101,7 @@ p.footer a			{color:#333333}
 //								add date for newcases
 // 27.03.2021	0.9alpha		add history function for old values
 // 14.05.2021	1.0				first release
+// 17.09.2021	1.1				add page with links for BL
 //##########################################################
 // based on: https://www.cjpj.de/appshell.htm
 // Simple App Shell, (c) 2020 webapps@cjpj, P. Janko
@@ -110,8 +113,8 @@ p.footer a			{color:#333333}
 
 //##########################################################
 //basic global vars
-var appVersion = "1.0";
-var appRelease = "14.05.2021";
+var appVersion = "1.1";
+var appRelease = "17.09.2021";
 //global array with all pages
 var appPages = new Array();
 
@@ -296,6 +299,7 @@ function showJasonData(dtype) {
 			//show lk dropdwon #################################
 			var containerSB = "<option value=\"0\">Landkreis wählen:</option>";
 			var helperArr = new Array(); 	//array for sorting
+			var datecounter = 0;
 			for (var i = 0; i < dataContainerObjLK.features.length; i++) {
 				//option entries for lk drowpdown
 				var jsonStr = "<!--" + dataContainerObjLK.features[i].attributes.GEN + "--><option value=\"" + dataContainerObjLK.features[i].attributes.OBJECTID + "\">" + dataContainerObjLK.features[i].attributes.GEN + " (" + dataContainerObjLK.features[i].attributes.BEZ +")</option>";
@@ -303,6 +307,8 @@ function showJasonData(dtype) {
 				if (integrityCheck(testStr)) {
 					helperArr.push(jsonStr);
 				}
+				//check for same last update for all lk
+				if (dataContainerObjLK.features[0].attributes.last_update === dataContainerObjLK.features[i].attributes.last_update) {datecounter++;}
 			}
 			//fill str buffer with sorted items
 			helperArr.sort();
@@ -311,11 +317,13 @@ function showJasonData(dtype) {
 			//show saved lk ###################################
 			loadObjectIDs();
 			updateLKList();
-			//show date for new cases using lk data Berlin... (Workaround) ###################################
-			var currentLKDate = dataContainerObjLK.features[405].attributes.last_update;
+			//show date for new cases using lk data (only if all lk updates are the same, Workaround) ###################################
+			var currentLKDate = dataContainerObjLK.features[0].attributes.last_update;
 			if ((currentLKDate == null) || (currentLKDate === "")) {currentLKDate = "No Data"};
-			if (integrityCheck(currentLKDate)) {
-				document.getElementById("lkdate").innerHTML = currentLKDate.substr(0,10);
+			if (datecounter === dataContainerObjLK.features.length) {
+				if (integrityCheck(currentLKDate)) {
+					document.getElementById("lkdate").innerHTML = currentLKDate.substr(0,10);
+				}
 			}
 		} else if (dtype === "nc") {
 			//shwo new cases ###################################
@@ -650,6 +658,7 @@ function deleteAllLK() {
 <div class="page" id="info">
 	<div class="header">
 		<h1>Simple Corona Info</h1>
+		<a class="button2" href="#blinfo" style="right:85px">BL</a>
 		<a class="button1" href="#appstart">Zurück</a>
 	</div>
 	<div class="content">
@@ -719,6 +728,112 @@ function deleteAllLK() {
 			<li><a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener">Open Data Datenlizenz Deutschland - Namensnennung - Version 2.0</a></li>
 		</ul>
 		<br />
+	</div>
+</div>
+
+<!-- ###################### ABOUT PAGE ##############################  -->
+<div class="page" id="blinfo">
+	<div class="header">
+		<h1>Simple Corona Info</h1>
+		<a class="button1" href="#info">Zurück</a>
+	</div>
+	<div class="content">
+		<h2>Regeln in den Bundesländern</h2>
+		<table>
+			<thead>
+				<tr><th colspan="3">Bundesland Corona Infos&nbsp;*</th></tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://www.baden-wuerttemberg.de/de/service/aktuelle-infos-zu-corona/" target="_blank" rel="noopener">Baden-Württemberg</a></td>
+					<td><a class="direkt" href="https://www.baden-wuerttemberg.de/de/service/aktuelle-infos-zu-corona/uebersicht-fragen-und-antworten/" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://sozialministerium.baden-wuerttemberg.de/de/gesundheit-pflege/gesundheitsschutz/infektionsschutz-hygiene/informationen-zu-coronavirus/lage-in-baden-wuerttemberg/" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://www.bayern.de/coronavirus-in-bayern-informationen-auf-einen-blick/" target="_blank" rel="noopener">Bayern</a></td>
+					<td><a class="direkt" href="https://www.stmi.bayern.de/miniwebs/coronavirus/faq/index.php" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://www.lgl.bayern.de/gesundheit/infektionsschutz/infektionskrankheiten_a_z/coronavirus/karte_coronavirus/index.htm#kennzahlen" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://www.berlin.de/corona/" target="_blank" rel="noopener">Berlin</a></td>
+					<td><a class="direkt" href="https://www.berlin.de/corona/faq/" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://www.berlin.de/corona/lagebericht/" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://kkm.brandenburg.de/kkm/de/" target="_blank" rel="noopener">Brandenburg</a></td>
+					<td><a class="direkt" href="https://kkm.brandenburg.de/kkm/de/#" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://kkm.brandenburg.de/kkm/de/corona/fallzahlen-land-brandenburg/" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://www.bremen.de/corona" target="_blank" rel="noopener">Bremen</a></td>
+					<td><a class="direkt" href="https://www.inneres.bremen.de/corona-die-haeufigsten-fragen-und-antworten-23460" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://www.inneres.bremen.de/corona-die-haeufigsten-fragen-und-antworten-23460" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://www.hamburg.de/coronavirus/" target="_blank" rel="noopener">Hamburg</a></td>
+					<td><a class="direkt" href="https://www.hamburg.de/faq-corona/" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://www.hamburg.de/corona-zahlen/" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://www.hessen.de/fuer-buerger/aktuelle-informationen-zu-corona-hessen" target="_blank" rel="noopener">Hessen</a></td>
+					<td><a class="direkt" href="https://soziales.hessen.de/gesundheit/corona-in-hessen/wie-finde-ich-mich-zurecht" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://soziales.hessen.de/gesundheit/corona-in-hessen/taegliche-uebersicht-ueber-die-indikatoren-zur-pandemiebestimmung" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://www.regierung-mv.de/corona/" target="_blank" rel="noopener">Mecklenburg-Vorpomm.</a></td>
+					<td><a class="direkt" href="https://www.mv-corona.de/corona-faq" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://www.mv-corona.de/" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://www.niedersachsen.de/Coronavirus" target="_blank" rel="noopener">Niedersachsen</a></td>
+					<td><a class="direkt" href="https://www.niedersachsen.de/Coronavirus/antworten-auf-haufig-gestellte-fragen-faq-185463.html" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://www.niedersachsen.de/Coronavirus/aktuelle_lage_in_niedersachsen/niedersachsen-und-corona-aktuelle-leitindikatoren-203487.html" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://www.land.nrw/corona" target="_blank" rel="noopener">Nordrhein-Westfalen</a></td>
+					<td><a class="direkt" href="https://www.land.nrw/de/wichtige-fragen-und-antworten-zum-corona-virus" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://www.mags.nrw/coronavirus-fallzahlen-nrw" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://corona.rlp.de/de/startseite/" target="_blank" rel="noopener">Rheinland-Pfalz</a></td>
+					<td><a class="direkt" href="https://corona.rlp.de/de/service/faqs/" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://lua.rlp.de/de/presse/detail/news/News/detail/coronavirus-sars-cov-2-aktuelle-fallzahlen-fuer-rheinland-pfalz/" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://www.saarland.de/DE/portale/corona/home/home_node.html" target="_blank" rel="noopener">Saarland</a></td>
+					<td><a class="direkt" href="https://www.saarland.de/DE/portale/corona/service/saarland-modell/saarland-modell-faq/saarland-modell-faq_node.html" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://www.saarland.de/DE/portale/corona/service/aktuelle-lage/aktuelle-lage_node.html" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://www.coronavirus.sachsen.de/index.html" target="_blank" rel="noopener">Sachsen</a></td>
+					<td><a class="direkt" href="https://www.coronavirus.sachsen.de/haeufige-fragen-zu-den-ausgangsbeschraenkungen-und-einschraenkungen-des-oeffentlichen-lebens-5074.html" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://www.coronavirus.sachsen.de/infektionsfaelle-in-sachsen-4151.html" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://coronavirus.sachsen-anhalt.de/" target="_blank" rel="noopener">Sachsen-Anhalt</a></td>
+					<td><a class="direkt" href="https://coronavirus.sachsen-anhalt.de/news-detail/news/fragen-und-antworten-rund-um-das-corona-virus/" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://coronavirus.sachsen-anhalt.de/fallzahlen-covid-19/" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://www.schleswig-holstein.de/DE/Schwerpunkte/Coronavirus/coronavirus_node.html" target="_blank" rel="noopener">Schleswig-Holstein</a></td>
+					<td><a class="direkt" href="https://www.schleswig-holstein.de/DE/Schwerpunkte/Coronavirus/FAQ/faq_coronavirus_node.html" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://www.schleswig-holstein.de/DE/Schwerpunkte/Coronavirus/Zahlen/zahlen_node.html" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px"><a href="https://corona.thueringen.de/" target="_blank" rel="noopener">Thüringen</a></td>
+					<td><a class="direkt" href="https://www.tmasgff.de/covid-19/faq" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://www.tmasgff.de/fruehwarnsystem" target="_blank" rel="noopener">Lage</a></td>
+				</tr>
+				<tr>
+					<td style="text-align:left;padding:10px; font-size:16px" colspan="3"><a href="https://www.arcgis.com/apps/opsdashboard/index.html#/2694322fc7894bf5886647f652f093ca" target="_blank" rel="noopener">RKI COVID-19 Germany Bundesländer</a></td>
+				</tr>
+			</tbody>
+		</table>
+		<p style="margin-top:-15px;">* Verlinkung auf externe Webseiten<br /><strong>Bundesland:</strong> Corona Startseite des BL, <strong>FAQ:</strong>&nbsp;Häufige&nbsp;Fragen, <strong>Lage:</strong> Aktuelle Lage</p>
+		<hr />
+		<p>Keine Gewähr für Richtigkeit der bereitgestellten Informationen, siehe <a href="https://www.cjpj.de/contact.htm#termsde" target="_blank" rel="noopener">Nutzungsbedingungen</a>.</p>
+		<p class="footer">Simple Corona Info <span class="fversion"></span></p>
 	</div>
 </div>
 
