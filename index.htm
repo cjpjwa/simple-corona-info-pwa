@@ -102,6 +102,7 @@ p.footer a			{color:#333333}
 // 27.03.2021	0.9alpha		add history function for old values
 // 14.05.2021	1.0				first release
 // 17.09.2021	1.1				add page with links for BL
+// 02.10.2021	1.2				correct date eval. for new cases
 //##########################################################
 // based on: https://www.cjpj.de/appshell.htm
 // Simple App Shell, (c) 2020 webapps@cjpj, P. Janko
@@ -113,8 +114,8 @@ p.footer a			{color:#333333}
 
 //##########################################################
 //basic global vars
-var appVersion = "1.1";
-var appRelease = "17.09.2021";
+var appVersion = "1.2";
+var appRelease = "02.10.2021";
 //global array with all pages
 var appPages = new Array();
 
@@ -307,8 +308,10 @@ function showJasonData(dtype) {
 				if (integrityCheck(testStr)) {
 					helperArr.push(jsonStr);
 				}
-				//check for same last update for all lk
-				if (dataContainerObjLK.features[0].attributes.last_update === dataContainerObjLK.features[i].attributes.last_update) {datecounter++;}
+				//check for same last update for all lk or "" (Eisenach still in list with last_update="" but added to Wartburgkreis)
+				if ((dataContainerObjLK.features[0].attributes.last_update === dataContainerObjLK.features[i].attributes.last_update) || (dataContainerObjLK.features[i].attributes.last_update === "")) {
+					datecounter++;
+				}
 			}
 			//fill str buffer with sorted items
 			helperArr.sort();
