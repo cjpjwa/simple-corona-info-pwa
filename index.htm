@@ -53,7 +53,8 @@ body				{padding:0px; margin:0px; background:#cccccc; color:#333333; font-family
 
 /* to switch off safari ios style of form elements use:  -webkit-appearance:none */
 .content select			 	{padding:7px 0px 7px 10px; margin:10px 5px 10px 5%; color:#333333; width:60%; background:#eeeeee; border:1px solid #333333; border-radius:5px; font-size:16px;}
-.content div#newlist		{font-family: monospace; font-weight:bold; font-size:52px; text-align:center; padding:0px 10px 0px 10px; color:#990000}
+.content div#newlist		{font-family: monospace; font-weight:bold; font-size:48px; text-align:center; padding:0px 10px 0px 10px; color:#990000}
+.content div#newinz			{font-weight:normal; font-size:14px; text-align:center; padding:0px 10px 5px 10px; color:#333333}
 .content div#daterefresh	{position:fixed; bottom:0px; left:0px; color:#eeeeee; font-size:18px; padding:2px 10px 2px 10px; margin:0px; width:100%; background:#333333; text-align:center}
 .content strong#datelist	{color:#ffff66}
 
@@ -103,6 +104,8 @@ p.footer a			{color:#333333}
 // 14.05.2021	1.0				first release
 // 17.09.2021	1.1				add page with links for BL
 // 02.10.2021	1.2				correct date eval. for new cases
+// 05.11.2021	1.3				use new json for new cases, add 7day Inz. for BRD,
+//								link update for Hessen
 //##########################################################
 // based on: https://www.cjpj.de/appshell.htm
 // Simple App Shell, (c) 2020 webapps@cjpj, P. Janko
@@ -114,8 +117,8 @@ p.footer a			{color:#333333}
 
 //##########################################################
 //basic global vars
-var appVersion = "1.2";
-var appRelease = "02.10.2021";
+var appVersion = "1.3";
+var appRelease = "05.11.2021";
 //global array with all pages
 var appPages = new Array();
 
@@ -134,12 +137,9 @@ var maxNofIDs = 10;
 var dataJasonURLLK = "https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_Landkreisdaten/FeatureServer/0/query?where=1%3D1&outFields=OBJECTID,GEN,BEZ,EWZ,cases,deaths,last_update,cases7_lk,cases7_per_100k_txt,BL,BL_ID,cases7_bl_per_100k&returnGeometry=false&outSR=4326&f=json";
 
 //############################################################################
-//RKI_COVID19
-//Tabelle mit den aktuellen Covid-19 Infektionen pro Tag (Zeitreihe).
-//Source: https://hub.arcgis.com/datasets/dd4580c810204019a7b8eb3e0b329dd6
-//https://services7.arcgis.com/mOBPykOjAyBO2ZKk/ArcGIS/rest/services/RKI_COVID19/FeatureServer/0
-//Query info for new cases from https://gist.github.com/malakka/0576bb922e7b81b95137a06b619bba1b
-var dataJasonURLNC = "https://services7.arcgis.com/mOBPykOjAyBO2ZKk/ArcGIS/rest/services/RKI_COVID19/FeatureServer/0/query?where=NeuerFall+IN%281%2C+-1%29&resultType=standard&outFields=*&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=true&outStatistics=%5B%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22AnzahlFall%22%2C%22outStatisticFieldName%22%3A%22value%22%7D%5D&sqlFormat=none&f=pjson";
+//Layer: rki_key_data (ID:0)
+//Source https://services7.arcgis.com/mOBPykOjAyBO2ZKk/ArcGIS/rest/services/rki_key_data_hubv/FeatureServer/0
+var dataJasonURLNC = "https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/rki_key_data_hubv/FeatureServer/0/query?where=1%3D1&outFields=BundeslandId,AnzFallNeu,Inz7T&outSR=4326&f=json";
 
 //gobal json Objects
 var dataContainerObjLK;		//obj for Landkreise
@@ -308,7 +308,7 @@ function showJasonData(dtype) {
 				if (integrityCheck(testStr)) {
 					helperArr.push(jsonStr);
 				}
-				//check for same last update for all lk or "" (Eisenach still in list with last_update="" but added to Wartburgkreis)
+				//check for same last update for all lk or "" (Eisenach added to Wartburgkreis)
 				if ((dataContainerObjLK.features[0].attributes.last_update === dataContainerObjLK.features[i].attributes.last_update) || (dataContainerObjLK.features[i].attributes.last_update === "")) {
 					datecounter++;
 				}
@@ -330,11 +330,21 @@ function showJasonData(dtype) {
 			}
 		} else if (dtype === "nc") {
 			//shwo new cases ###################################
-			var newCases = dataContainerObjNC.features[0].attributes.value;
-			if ((newCases == null) || (newCases === "")) {newCases = "No Data"};
-			if (integrityCheck(newCases)) {
-				document.getElementById("newlist").innerHTML = "+" + newCases;
-			}
+			for (var n = 0; n < dataContainerObjNC.features.length; n++) {
+    			var newBLID  = dataContainerObjNC.features[n].attributes.BundeslandId;    	//get BL ID
+    			var newInz7  = dataContainerObjNC.features[n].attributes.Inz7T;				//get 7dayInz for BL
+    			var newCases = dataContainerObjNC.features[n].attributes.AnzFallNeu;		//get new cases for BL
+    			//handle missing data
+    			if ((newBLID == null) || (newBLID === "")) {newBLID = "No Data"};
+    			if ((newCases == null) || (newCases === "")) {newCases = "No Data"};
+    			if ((newInz7 == null) || (newInz7 === "")) {newInz7 = "No Data"};
+			    //check for BundeslandId=0 to get BRD data (may not be first one, BL Ids can be unsorted!!!)
+    			if (newBLID === 0) {
+    				if (integrityCheck(newCases)) {document.getElementById("newlist").innerHTML = "+" + newCases;}
+    				if (integrityCheck(newInz7))  {document.getElementById("newinz").innerHTML = "7-Tage-Inz. BRD: <strong>" + newInz7 + "</strong>";}
+                    break; //leaf loop if BRD ist found
+    			}
+            }
 		}
 		//show current date ###################################
 		var dateObj = new Date();
@@ -363,14 +373,14 @@ function readJsonData(dtype) {
 		var xmlhttpObj = new XMLHttpRequest();
 		xmlhttpObj.onreadystatechange = function() {
 			if ((this.readyState === 4) && (this.status === 200)) {
-				//fill container obj with jason data
-				if (dtype === "lk") {
-					dataContainerObjLK = JSON.parse(this.responseText);
-				} else if (dtype === "nc") {
-					dataContainerObjNC = JSON.parse(this.responseText);
-				}
-				//console.log("ajax done: " + dtype);
-				showJasonData(dtype);
+            	//fill container obj with jason data
+            	if (dtype === "lk") {
+            		dataContainerObjLK = JSON.parse(this.responseText);
+            	} else if (dtype === "nc") {
+            		dataContainerObjNC = JSON.parse(this.responseText);
+            	}
+            	//console.log("ajax done: " + dtype);
+            	showJasonData(dtype);
 			}
 		};
 		xmlhttpObj.open("GET", dataJasonURL, true);
@@ -601,7 +611,7 @@ function loadHistoryData() {
 //##########################################################
 //reload data (trigger new jason load)
 function refreshDataList() {
-	document.location.reload(true);
+	location.reload(true);
 }
 
 //##########################################################
@@ -636,6 +646,7 @@ function deleteAllLK() {
 		<form id="lkform" name="lkform" action="javascript:void(0)">
 			<h2>Neuinfektionen BRD <span style="font-size:14px; font-weight:normal"><br />zum Vortag</span></h2>
 			<div id="newlist">Lade Daten</div>
+			<div id="newinz">-</div>
 			<p>Stand: <strong id="lkdate"></strong></p>
 			<hr />
 			<div id="lklist" style="text-align:center;">Lade Daten</div>
@@ -779,9 +790,9 @@ function deleteAllLK() {
 					<td><a class="direkt" href="https://www.hamburg.de/corona-zahlen/" target="_blank" rel="noopener">Lage</a></td>
 				</tr>
 				<tr>
-					<td style="text-align:left;padding:10px"><a href="https://www.hessen.de/fuer-buerger/aktuelle-informationen-zu-corona-hessen" target="_blank" rel="noopener">Hessen</a></td>
-					<td><a class="direkt" href="https://soziales.hessen.de/gesundheit/corona-in-hessen/wie-finde-ich-mich-zurecht" target="_blank" rel="noopener">FAQ</a></td>
-					<td><a class="direkt" href="https://soziales.hessen.de/gesundheit/corona-in-hessen/taegliche-uebersicht-ueber-die-indikatoren-zur-pandemiebestimmung" target="_blank" rel="noopener">Lage</a></td>
+					<td style="text-align:left;padding:10px"><a href="https://www.hessen.de/Handeln/Corona-in-Hessen" target="_blank" rel="noopener">Hessen</a></td>
+					<td><a class="direkt" href="https://www.hessen.de/Handeln/Corona-in-Hessen" target="_blank" rel="noopener">FAQ</a></td>
+					<td><a class="direkt" href="https://www.hessen.de/Handeln/Corona-in-Hessen" target="_blank" rel="noopener">Lage</a></td>
 				</tr>
 				<tr>
 					<td style="text-align:left;padding:10px"><a href="https://www.regierung-mv.de/corona/" target="_blank" rel="noopener">Mecklenburg-Vorpomm.</a></td>
