@@ -1,9 +1,9 @@
 //########################################
 // serviceworker for Simple Corona Info
-// Version: 30.11.2021 19:44
+// Version: 27.01.2022 19:44
 //########################################
 
-var cacheName = 'simple_corona_info_21_11_30_19_44';
+var cacheName = 'simple_corona_info_22_01_27_19_44';
 var urlsToCache = [
 	'/',
 	'/index.htm',

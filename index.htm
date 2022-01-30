@@ -110,6 +110,7 @@ p.footer a			{color:#333333}
 //								link update for Hessen
 // 14.11.2021	1.4				add 7day Inz. to BL page
 // 01.12.2021	1.5				increase max. counties from 10 to 25
+// 27.01.2022	1.6				better execption handling for lk_LU and invalid json
 //##########################################################
 // based on: https://www.cjpj.de/appshell.htm
 // Simple App Shell, (c) 2020 webapps@cjpj, P. Janko
@@ -121,8 +122,8 @@ p.footer a			{color:#333333}
 
 //##########################################################
 //basic global vars
-var appVersion = "1.5";
-var appRelease = "01.12.2021";
+var appVersion = "1.6";
+var appRelease = "27.01.2022";
 //global array with all pages
 var appPages = new Array();
 
@@ -348,26 +349,26 @@ function showJasonData(dtype) {
 		} else if (dtype === "nc") {
 			//shwo new cases ###################################
 			for (var n = 0; n < dataContainerObjNC.features.length; n++) {
-    			var newBLID  = dataContainerObjNC.features[n].attributes.BundeslandId;    	//get BL ID
-    			var newInz7  = dataContainerObjNC.features[n].attributes.Inz7T;				//get 7dayInz for BL
-    			var newCases = dataContainerObjNC.features[n].attributes.AnzFallNeu;		//get new cases for BL
-    			//handle missing data
-    			if ((newBLID == null) || (newBLID === "")) {newBLID = "No Data"};
-    			if ((newCases == null) || (newCases === "")) {newCases = "No Data"};
-    			if ((newInz7 == null) || (newInz7 === "")) {newInz7 = "No Data"};
-			    //check for BundeslandId=0 to get BRD data (may not be first one, BL Ids can be unsorted!!!)
-    			if (newBLID === 0) {
-    				if (integrityCheck(newCases)) {document.getElementById("newlist").innerHTML = "+" + newCases;}
-    				if (integrityCheck(newInz7))  {document.getElementById("newinz").innerHTML = "7-Tage-Inz. BRD: <strong>" + newInz7 + "</strong>";}
-                    break; //leaf loop if BRD ist found
-    			}
-            }
+				var newBLID  = dataContainerObjNC.features[n].attributes.BundeslandId;    	//get BL ID
+				var newInz7  = dataContainerObjNC.features[n].attributes.Inz7T;				//get 7dayInz for BL
+				var newCases = dataContainerObjNC.features[n].attributes.AnzFallNeu;		//get new cases for BL
+				//handle missing data
+				if ((newBLID == null) || (newBLID === "")) {newBLID = "No Data"};
+				if ((newCases == null) || (newCases === "")) {newCases = "No Data"};
+				if ((newInz7 == null) || (newInz7 === "")) {newInz7 = "No Data"};
+				//check for BundeslandId=0 to get BRD data (may not be first one, BL Ids can be unsorted!!!)
+				if (newBLID === 0) {
+					if (integrityCheck(newCases)) {document.getElementById("newlist").innerHTML = "+" + newCases;}
+					if (integrityCheck(newInz7))  {document.getElementById("newinz").innerHTML = "7-Tage-Inz. BRD: <strong>" + newInz7 + "</strong>";}
+					break; //leaf loop if BRD ist found
+				}
+			}
 		}
 		//show current date ###################################
 		var dateObj = new Date();
 		var currentDate = dateObj.getDate() + "." + (dateObj.getMonth()+1) + "." + dateObj.getFullYear();
 		var currentTime = dateObj.getHours();
-        if ((currentTime >= 0) && (currentTime < 4) && (dtype === "nc")) {alert(msg07);}  //note: update about 3:00 am (set info time from 0:00-3:59 am)
+		if ((currentTime >= 0) && (currentTime < 4) && (dtype === "nc")) {alert(msg07);}  //note: update about 3:00 am (set info time from 0:00-3:59 am)
 		document.getElementById("datelist").innerHTML = currentDate;
 	} else {
 		//info for no connection
@@ -390,14 +391,19 @@ function readJsonData(dtype) {
 		var xmlhttpObj = new XMLHttpRequest();
 		xmlhttpObj.onreadystatechange = function() {
 			if ((this.readyState === 4) && (this.status === 200)) {
-            	//fill container obj with jason data
-            	if (dtype === "lk") {
-            		dataContainerObjLK = JSON.parse(this.responseText);
-            	} else if (dtype === "nc") {
-            		dataContainerObjNC = JSON.parse(this.responseText);
-            	}
-            	//console.log("ajax done: " + dtype);
-            	showJasonData(dtype);
+			   	//check for invalid json data
+				try {
+					//fill container obj with jason data
+					if (dtype === "lk") {
+						dataContainerObjLK = JSON.parse(this.responseText);
+					} else if (dtype === "nc") {
+						dataContainerObjNC = JSON.parse(this.responseText);
+					}
+					//console.log("ajax done: " + dtype);
+					showJasonData(dtype);
+				} catch(err) {
+					console.log("invalid json: " + err);
+				}
 			}
 		};
 		xmlhttpObj.open("GET", dataJasonURL, true);
@@ -445,7 +451,7 @@ function updateLKList() {
 				var lk_ID  = dataContainerObjLK.features[n].attributes.OBJECTID;
 				var lk_GEN = dataContainerObjLK.features[n].attributes.GEN;
 				var lk_BEZ = dataContainerObjLK.features[n].attributes.BEZ;
-				var lk_LU  = dataContainerObjLK.features[n].attributes.last_update.substr(0,17);
+				var lk_LU  = dataContainerObjLK.features[n].attributes.last_update;
 				var lk_C7T = dataContainerObjLK.features[n].attributes.cases7_per_100k_txt;
 				var lk_C7LK = dataContainerObjLK.features[n].attributes.cases7_lk
 				var lk_CASES = dataContainerObjLK.features[n].attributes.cases;
@@ -458,7 +464,7 @@ function updateLKList() {
 				if ((lk_ID == null) || (lk_ID === "")) {lk_ID = "No Data"};
 				if ((lk_GEN == null) || (lk_GEN === "")) {lk_GEN = "No Data"};
 				if ((lk_BEZ == null) || (lk_BEZ === "")) {lk_BEZ = "No Data"};
-				if ((lk_LU == null) || (lk_LU === "")) {lk_LU = "No Data"};
+				if ((lk_LU == null) || (lk_LU === "")) {lk_LU = "No Data"} else {lk_LU = lk_LU.substr(0,17);};     //show date, time without "Uhr"
 				if ((lk_C7T == null) || (lk_C7T === "")) {lk_C7T = "No Data"};
 				if ((lk_C7LK == null) || (lk_C7LK === "")) {lk_C7LK = "No Data"};
 				if ((lk_CASES == null) || (lk_CASES === "")) {lk_CASES = "No Data"};
